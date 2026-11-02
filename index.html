@@ -512,6 +512,24 @@ ol.steps li::before{
   padding:13px 15px;font-size:14.5px;color:var(--ink);
   overflow-wrap:anywhere;
 }
+.memo a,.src-link{
+  color:var(--acc);text-decoration:underline;text-underline-offset:3px;
+  font-weight:600;overflow-wrap:anywhere;word-break:break-all;
+}
+.src-list{
+  display:flex;flex-direction:column;gap:8px;
+}
+.src-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:11px 14px;
+  font-size:14px;color:var(--ink);overflow-wrap:anywhere;
+}
+.src-item .ico{color:var(--acc);flex:none}
+.src-item a{
+  color:var(--acc);text-decoration:underline;text-underline-offset:3px;
+  font-weight:600;overflow-wrap:anywhere;word-break:break-all;flex:1;min-width:0;
+}
 .scaler{
   display:inline-flex;align-items:center;gap:6px;
   background:var(--card);border:1px solid var(--line);
@@ -780,7 +798,7 @@ pre.ex{
         <button type="button" class="tag" id="btnInsertTpl">テンプレート挿入</button>
       </div>
     </div>
-    <textarea id="fText" style="min-height:280px" placeholder="鶏の照り焼き（定番）&#10;分量: 2人分&#10;調理時間: 20分&#10;タグ: 主菜, 作り置き・弁当&#10;&#10;【材料】&#10;鶏もも肉 300g&#10;【たれ】&#10;醤油 大さじ2&#10;みりん 大さじ2&#10;&#10;【作り方】&#10;1. 肉を一口大に切る&#10;2. フライパンで中火5分焼く&#10;&#10;【メモ】&#10;弱火でじっくりからめる"></textarea>
+    <textarea id="fText" style="min-height:280px" placeholder="鶏の照り焼き（定番）&#10;分量: 2人分&#10;調理時間: 20分&#10;タグ: 主菜, 作り置き・弁当&#10;&#10;【材料】&#10;鶏もも肉 300g&#10;【たれ】&#10;醤油 大さじ2&#10;みりん 大さじ2&#10;&#10;【作り方】&#10;1. 肉を一口大に切る&#10;2. フライパンで中火5分焼く&#10;&#10;【メモ】&#10;弱火でじっくりからめる&#10;&#10;【情報源】&#10;https://example.com"></textarea>
     <p class="meta" id="fCount"></p>
 
     <details class="pv-box" id="fPvWrap">
@@ -841,6 +859,7 @@ pre.ex{
 ・合わせ調味料などがある場合は【たれ】【A】のように小見出し行を入れる
 ・【作り方】の下は「1. 」「2. 」のように番号付きで1行1手順ずつ書く
 ・【メモ】の下にコツやアレンジ、保存目安などを書く
+・参考にした動画やWebサイトのURLがある場合は、最後に【情報源】の見出しを入れてURLのみを1行ずつ書く（ない場合は省略）
 ・複数のレシピを出力する場合は、レシピとレシピの間を「---」だけの行で区切る
 
 ---
@@ -1077,8 +1096,11 @@ function initData(){
       if(!seeded&&!recipes.length){
         seed();
         idbPut("seeded","1");
-      }else if(res&&res.recipes==null&&recipes.length){
-        save();saveShop();saveTrash();idbPut("seeded","1");
+      }else{
+        if(migrateRecipes(recipes))save();
+        if(res&&res.recipes==null&&recipes.length){
+          save();saveShop();saveTrash();idbPut("seeded","1");
+        }
       }
       var validIds={};
       recipes.forEach(function(r){validIds[r.id]=1});
@@ -1460,47 +1482,150 @@ function snorm(x){
   return t;
 }
 
-// ---- Smart Genre Auto-Inference ----
-function getRecipeCats(r){
-  var cats={}, tags=(r.tags||[]).join(" ");
-  var titleGrp=(r.title||"")+" "+(r.group||"");
-  var ingLines=(r.ingredients||[]).filter(function(l){return !isIngGroup(l)});
-  var ingNames=ingLines.map(function(l){return l.split(/[ 　]/)[0]}).join(" ");
+// ---- Smart Genre Auto-Inference & Legacy Migration ----
+var REDUNDANT_CAT_TAGS={
+  "主菜":1,"メイン":1,"おかず":1,"肉料理":1,"魚料理":1,
+  "副菜":1,"おつまみ":1,"つまみ":1,"小鉢":1,"常備菜":1,
+  "作り置き":1,"つくおき":1,"弁当":1,"お弁当":1,
+  "汁物":1,"麺類":1,"主食":1,"ご飯・麺":1,"副菜・おつまみ":1,"作り置き・弁当":1
+};
+
+function inferRecipeCats(r){
+  var cats={}, rawTags=r.tags||[];
+  var tagsClean=rawTags.join(" ").replace(/出汁|だし汁|煮汁/g,"");
+  var baseTitle=splitTitleParts(r.title||"").base;
   var memoTxt=r.memo||"";
+  var mainIngNames=[], inSubExtra=false;
+  (r.ingredients||[]).forEach(function(line){
+    var s=String(line).trim();
+    if(isIngGroup(s)){
+      inSubExtra=/シメ|〆|アレンジ|薬味|つけだれ|仕上げ/.test(s);
+      return;
+    }
+    if(!inSubExtra){
+      var np=s.split(/[ 　]/)[0];
+      if(!/スープの素|だしの素|たれ|ソース/.test(np))mainIngNames.push(np);
+    }
+  });
+  var ingNames=mainIngNames.join(" ");
 
-  // 1. Explicit tag matches
-  if(/ご飯|ごはん|飯|米|丼|どんぶり|麺|めん|パスタ|スパゲ|うどん|そば|蕎麦|ラーメン|焼きそば|焼そば|パン|主食|チャーハン|炒飯|炊き込み|おにぎり|おむすび|寿司|雑炊|リゾット|ドリア|餅/.test(tags))cats["ご飯・麺"]=1;
-  if(/汁物|スープ|味噌汁|みそ汁|汁|鍋|シチュー|ポタージュ|豚汁|けんちん|お吸い物|吸い物/.test(tags))cats["汁物"]=1;
-  if(/副菜|おつまみ|つまみ|小鉢|サラダ|和え|酢の物|漬物|漬け|前菜|肴|あと一品/.test(tags))cats["副菜・おつまみ"]=1;
-  if(/作り置き|つくおき|常備菜|弁当|お弁当|冷凍保存/.test(tags))cats["作り置き・弁当"]=1;
-  if(/主菜|メイン|おかず|肉料理|魚料理|(?:^|\s)(?:肉|魚)(?:\s|$)/.test(tags))cats["主菜"]=1;
+  if(/ご飯・麺|ご飯|ごはん|丼もの|丼|どんぶり|麺類|麺|めん|パスタ|スパゲ|うどん|そば|蕎麦|ラーメン|焼きそば|焼そば|パン|主食|チャーハン|炒飯|炊き込み|おにぎり|おむすび|寿司|雑炊|リゾット|ドリア|餅/.test(tagsClean))cats["ご飯・麺"]=1;
+  if(/汁物|スープ|味噌汁|みそ汁|鍋料理|鍋|シチュー|ポタージュ|豚汁|けんちん|お吸い物|吸い物|椀物/.test(tagsClean))cats["汁物"]=1;
+  if(/副菜・おつまみ|副菜|おつまみ|つまみ|小鉢|サラダ|和え|酢の物|漬物|漬け|前菜|肴|あと一品|常備菜|椀物/.test(tagsClean))cats["副菜・おつまみ"]=1;
+  if(/作り置き・弁当|作り置き|つくおき|常備菜|弁当|お弁当|冷凍保存|冷凍ストック/.test(tagsClean))cats["作り置き・弁当"]=1;
+  if(/主菜|メイン|おかず|肉料理|魚料理|鍋料理|グラタン/.test(tagsClean))cats["主菜"]=1;
 
-  // 2. Title / Ingredient inference (catches 塩焼きそば, とうめし, 丼, 麺, 鍋, etc.)
-  if(/めし|飯|丼|どんぶり|焼きそば|焼そば|そば|蕎麦|うどん|パスタ|スパゲ|ペペロン|カルボナーラ|ナポリタン|ボロネーゼ|ミートソース|マカロニ|ラーメン|担々麺|冷麺|そうめん|素麺|にゅうめん|ちゃんぽん|皿うどん|まぜそば|油そば|チャーハン|炒飯|ピラフ|パエリア|オムライス|カレーライス|ハヤシライス|タコライス|ガパオ|ビビンバ|クッパ|リゾット|ドリア|雑炊|おじや|粥|かゆ|おにぎり|おむすび|寿司|ちらし|トースト|サンド|ピザ|お好み焼き|たこ焼き|チヂミ/.test(titleGrp)||
-     /(?:^|\s)(?:ご飯|ごはん|白飯|温かいご飯|冷やご飯|米|生米|無洗米|もち米|中華麺|焼きそば|焼そば|蒸し麺|ゆで麺|うどん|冷凍うどん|そば|蕎麦|そうめん|素麺|パスタ|スパゲ|マカロニ|ラーメン|食パン|バゲット|フランスパン|餅|切り餅)/.test(ingNames)){
+  var isBento=/弁当/.test(baseTitle+" "+tagsClean);
+  if(/めし|飯|丼|どんぶり|焼きそば|焼そば|そば|蕎麦|うどん|パスタ|スパゲ|ペペロン|カルボナーラ|ナポリタン|ボロネーゼ|ミートソース|マカロニ|ラーメン|担々麺|冷麺|そうめん|素麺|にゅうめん|ちゃんぽん|皿うどん|まぜそば|油そば|チャーハン|炒飯|ピラフ|パエリア|オムライス|カレー(?!グラタン|味|粉|マヨ|炒め|風味|煮|ソテー|コロッケ)|ハヤシライス|タコライス|ガパオ|ビビンバ|クッパ|リゾット|ドリア|雑炊|おじや|粥|かゆ|おにぎり|おむすび|寿司|ちらし|トースト|サンド|ピザ/.test(baseTitle)||
+     (!isBento&&/(?:^|\s)(?:ご飯|ごはん|白飯|温かいご飯|冷やご飯|米|生米|無洗米|もち米|中華麺|焼きそば麺|蒸し麺|ゆで麺|うどん|冷凍うどん|そば|蕎麦|そうめん|素麺|パスタ|スパゲ|マカロニ|ラーメン|食パン|バゲット|フランスパン|餅|切り餅)(?:\s|$|（|\()/.test(ingNames))){
     cats["ご飯・麺"]=1;
   }
-  if(/汁|スープ|ポタージュ|チャウダー|シチュー|ミネストローネ|サンラータン|酸辣湯|サムゲタン|参鶏湯|鍋|ピェンロー|水炊き|おでん|ポトフ|トムヤム|吸い物|茶碗蒸し/.test(titleGrp)){
+  if(/汁|スープ|ポタージュ|チャウダー|シチュー|ミネストローネ|サンラータン|酸辣湯|サムゲタン|参鶏湯|鍋|ピェンロー|水炊き|おでん|ポトフ|トムヤム|吸い物|茶碗蒸し/.test(baseTitle)){
     cats["汁物"]=1;
   }
-  if(/きんぴら|サラダ|和え|おひたし|お浸し|ナムル|マリネ|カルパッチョ|カプレーゼ|コールスロー|浅漬|ピクルス|酢の物|南蛮漬|冷奴|やっこ|だし巻き|出し巻き|出汁巻き|玉子焼き|卵焼き|味玉|煮卵|アヒージョ|たたき|無限|塩昆布|ジャーマンポテト|枝豆|おつまみ|白瓜|なます|甘露煮|佃煮|大学芋|吉野仕立て/.test(titleGrp)){
+  if(/きんぴら|サラダ|和え|おひたし|お浸し|ナムル|マリネ|カルパッチョ|カプレーゼ|コールスロー|浅漬|ピクルス|酢の物|南蛮漬|冷奴|やっこ|だし巻き|出し巻き|出汁巻き|玉子焼き|卵焼き|味玉|煮卵|アヒージョ|たたき|無限|塩昆布|ジャーマンポテト|枝豆|おつまみ|白瓜|なます|甘露煮|佃煮|大学芋|吉野仕立て|焼きびたし|さっと煮|甘煮|そぼろあん|ラタトゥイユ/.test(baseTitle)){
     cats["副菜・おつまみ"]=1;
   }
-  if(/作り置き|つくおき|常備菜|弁当|日持ち|冷蔵保存|冷凍保存|保存目安/.test(titleGrp+" "+memoTxt)){
+  if(/作り置き|つくおき|常備菜|弁当|日持ち|冷蔵保存|冷凍保存|保存目安/.test(baseTitle+" "+memoTxt)){
     cats["作り置き・弁当"]=1;
   }
-  if(/照り焼き|てりやき|唐揚げ|から揚げ|からあげ|竜田揚げ|生姜焼き|しょうが焼き|ハンバーグ|ステーキ|とんかつ|トンカツ|カツ|フライ|コロッケ|メンチ|天ぷら|麻婆|回鍋肉|青椒肉絲|酢豚|エビチリ|海老チリ|八宝菜|油淋鶏|ユーリンチー|チキン南蛮|ソテー|ムニエル|グラタン|ロールキャベツ|肉詰め|餃子|ギョーザ|焼売|シュウマイ|春巻き|肉じゃが|角煮|チャーシュー|煮豚|焼き魚|煮魚|ブリ大根|ぶり大根|味噌煮|みそ煮|生姜煮|筑前煮|チャプチェ|プルコギ|よだれ鶏|バンバンジー|棒々鶏|ピェンロー|すき焼き|しゃぶしゃぶ|生姜焼/.test(titleGrp)){
+  if(/照り焼き|てりやき|唐揚げ|から揚げ|からあげ|竜田揚げ|生姜焼き|しょうが焼き|ハンバーグ|ステーキ|とんかつ|トンカツ|カツ|フライ|コロッケ|メンチ|天ぷら|麻婆|回鍋肉|青椒肉絲|酢豚|エビチリ|海老チリ|八宝菜|油淋鶏|ユーリンチー|チキン南蛮|ソテー|ムニエル|グラタン|ロールキャベツ|肉詰め|餃子|ギョーザ|焼売|シュウマイ|春巻き|肉じゃが|角煮|チャーシュー|煮豚|焼き魚|煮魚|ブリ大根|ぶり大根|味噌煮|みそ煮|生姜煮|筑前煮|チャプチェ|プルコギ|よだれ鶏|バンバンジー|棒々鶏|ピェンロー|すき焼き|しゃぶしゃぶ|生姜焼|とんぺい焼き|甘辛炒め|カレー|ボロネーゼ|とうめし/.test(baseTitle)){
     cats["主菜"]=1;
   }
-  // Fallback: if no main/side/rice/soup matched yet, infer from main protein vs vegetable
   if(!cats["ご飯・麺"]&&!cats["汁物"]&&!cats["副菜・おつまみ"]&&!cats["主菜"]){
-    if(/鶏|とり|豚|ぶた|牛(?!乳)|ぎゅう(?!にゅう)|ひき肉|挽き肉|挽肉|合いびき|鮭|サーモン|サバ|鯖|ブリ|鰤|タラ|鱈|エビ|海老|イカ|タコ|厚揚げ|手羽|ささみ/.test(titleGrp+" "+ingNames)){
+    if(/鶏|とり|豚|ぶた|牛(?!乳)|ぎゅう(?!にゅう)|ひき肉|挽き肉|挽肉|合いびき|鮭|サーモン|サバ|鯖|ブリ|鰤|タラ|鱈|エビ|海老|イカ|タコ|手羽|ささみ/.test(baseTitle+" "+ingNames)){
       cats["主菜"]=1;
     }else{
       cats["副菜・おつまみ"]=1;
     }
   }
   return BASE_CATS.filter(function(c){return cats[c]});
+}
+
+function getRecipeCats(r){
+  var tags=r.tags||[];
+  var explicit=BASE_CATS.filter(function(c){return tags.indexOf(c)>=0});
+  if(explicit.length||r.catEdited)return explicit;
+  return inferRecipeCats(r);
+}
+
+var SRC_LINE_RE=/^[・●•\-*＊○◯]?\s*(?:情報源|情報元|出典|参考(?:URL|元|サイト)?|引用元|URL|リンク)\s*[:：]\s*(.+)$/i;
+var BARE_URL_LINE_RE=/^[・●•\-*＊○◯]?\s*(https?:\/\/\S+)\s*$/i;
+
+function extractSourceFromRecipe(r){
+  if(!r)return false;
+  var changed=false;
+  var srcs=[];
+  if(r.source&&String(r.source).trim()){
+    String(r.source).split(/\r?\n/).forEach(function(s){
+      var v=s.trim().replace(/^[・●•\-*＊○◯]?\s*(?:情報源|情報元|出典|参考(?:URL|元|サイト)?|引用元|URL|リンク)\s*[:：]\s*/i,"").trim();
+      if(v&&srcs.indexOf(v)<0)srcs.push(v);
+    });
+  }
+  if(r.memo){
+    var kept=[], memoLines=String(r.memo).split(/\r?\n/);
+    memoLines.forEach(function(line){
+      var trimmed=line.trim();
+      var m=trimmed.match(SRC_LINE_RE)||trimmed.match(BARE_URL_LINE_RE);
+      if(m&&m[1]){
+        var val=m[1].trim();
+        if(val&&srcs.indexOf(val)<0)srcs.push(val);
+        changed=true;
+      }else{
+        kept.push(line);
+      }
+    });
+    if(changed){
+      r.memo=kept.join("\n").trim();
+    }
+  }
+  var joined=srcs.join("\n");
+  if((r.source||"")!==joined){
+    r.source=joined;
+    changed=true;
+  }
+  return changed;
+}
+
+function migrateRecipes(arr){
+  if(!Array.isArray(arr)||!arr.length)return false;
+  var changed=false, grpCounts={};
+  arr.forEach(function(r){
+    var g=(r.group||"").trim();
+    if(g&&!r.solo)grpCounts[g]=(grpCounts[g]||0)+1;
+  });
+  arr.forEach(function(r){
+    if(!r||!r.title)return;
+    if(extractSourceFromRecipe(r))changed=true;
+    var base=splitTitleParts(r.title).base;
+    var g=(r.group||"").trim();
+    if(g&&grpCounts[g]<=1&&normDishKey(g)!==normDishKey(base)){
+      r.group="";changed=true;
+    }
+    var sameBase=arr.filter(function(x){return x&&normDishKey(splitTitleParts(x.title).base)===normDishKey(base)});
+    if(r.solo&&sameBase.length<=1){
+      r.solo=false;r.primary=false;changed=true;
+    }
+    if(!r.group&&!r.solo&&sameBase.length>1){
+      r.group=base;changed=true;
+    }
+    var tags=r.tags||[];
+    var hasAllLegacy=tags.some(function(t){return REDUNDANT_CAT_TAGS[t]&&BASE_CATS.indexOf(t)<0});
+    var hasBaseCat=tags.some(function(t){return BASE_CATS.indexOf(t)>=0});
+    if(!hasBaseCat||hasAllLegacy){
+      var cats=inferRecipeCats(r);
+      var subs=[];
+      tags.forEach(function(t){
+        var s=String(t||"").trim();
+        if(!s||REDUNDANT_CAT_TAGS[s])return;
+        if(s==="サラダ"&&!/サラダ|きゅうり|トマト|ブロッコリー|レタス|コールスロー|マリネ|和え/.test(base))return;
+        if(subs.indexOf(s)<0)subs.push(s);
+      });
+      r.tags=cats.concat(subs);
+      changed=true;
+    }
+  });
+  return changed;
 }
 
 // ---- Fridge / Ingredient Filter Definitions ----
@@ -1511,10 +1636,14 @@ var ING_PRESETS=[
   {label:"ひき肉",re:/ひきにく|ひき肉|挽き肉|挽肉|みんち|あいびき|合いびき/},
   {label:"魚・海鮮",re:/さけ|しゃけ|鮭|さーもん|さば|鯖|ぶり|鰤|たら|鱈|あじ|鯵|いわし|さんま|まぐろ|えび|海老|いか|たこ|あさり|しらす|つな|ツナ/},
   {label:"卵",re:/たまご|卵|玉子|うずら/},
-  {label:"豆腐・厚揚げ",re:/とうふ|豆腐|あつあげ|厚揚げ|あぶらあげ|油揚げ|おあげ|高野豆腐/},
+  {label:"豆腐・厚揚げ",re:/とうふ|豆腐|あつあげ|厚揚げ|あぶらあげ|油揚げ|うすあげ|薄揚げ|おあげ|高野豆腐/},
+  {label:"チーズ",re:/ちーず|チーズ|ぱるみじゃーの|パルミジャーノ/},
   {label:"大根",re:/だいこん|大根/},
   {label:"白菜",re:/はくさい|白菜/},
   {label:"キャベツ",re:/きゃべつ|キャベツ/},
+  {label:"ブロッコリー",re:/ぶろっこりー|ブロッコリー/},
+  {label:"トマト",re:/とまと|トマト/},
+  {label:"ピーマン・パプリカ",re:/ぴーまん|ピーマン|ぱぷりか|パプリカ|ししとう/},
   {label:"ごぼう",re:/ごぼう|牛蒡/},
   {label:"にんじん",re:/にんじん|人参/},
   {label:"玉ねぎ",re:/たまねぎ|玉ねぎ|玉葱/},
@@ -1565,8 +1694,8 @@ function groupKey(r){
 }
 function variantLabel(r,baseTitle){
   var p=splitTitleParts(r.title);
-  if(p.variant)return p.variant;
-  if(r.title&&r.title!==baseTitle)return r.title;
+  if(p.variant&&(!baseTitle||normDishKey(p.base)===normDishKey(baseTitle)))return p.variant;
+  if(r.title&&r.title!==baseTitle)return p.base||r.title;
   return "基本";
 }
 function getStackItems(r){
@@ -1741,7 +1870,7 @@ function renderList(){
     }
     if(!qs.length)return true;
     var cats=getRecipeCats(r).join(" ");
-    var hay=snorm(r.title+" "+(r.group||"")+" "+cats+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||""));
+    var hay=snorm(r.title+" "+(r.group||"")+" "+cats+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||"")+" "+(r.source||""));
     return qs.every(function(w){return hay.indexOf(w)>=0});
   });
   var stacks=buildStacks(list);
@@ -1778,6 +1907,20 @@ function linkifyTimes(escapedStep){
     var sec=unit==="分"?n*60:n;
     return '<span class="tlink" data-sec="'+sec+'" role="button" tabindex="0">⏱ '+all+'</span>';
   });
+}
+function linkifyUrls(escapedText){
+  return String(escapedText||"").replace(/(https?:\/\/[^\s<>"'）)】\]]+)/g,function(url){
+    return '<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+url+'</a>';
+  });
+}
+var EXT_LINK_SVG='<svg class="ico" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+function renderSourceSection(srcText){
+  var lines=String(srcText||"").split(/\r?\n/).map(function(s){return s.trim()}).filter(Boolean);
+  if(!lines.length)return "";
+  var items=lines.map(function(l){
+    return '<div class="src-item">'+EXT_LINK_SVG+'<div style="flex:1;min-width:0">'+linkifyUrls(esc(l))+'</div></div>';
+  }).join("");
+  return '<h3><span>情報源</span></h3><div class="src-list">'+items+'</div>';
 }
 
 function openGroupModal(r){
@@ -1891,7 +2034,8 @@ function renderDetail(id){
       return '<li data-step="'+idx+'" class="'+(idx===stepCur?"cur":"")+'"><div class="step-body">'+linkifyTimes(esc(i))+'</div></li>';
     }).join("")+'</ol>';
   }
-  if(r.memo)h+='<h3><span>メモ</span></h3><div class="memo">'+esc(r.memo)+'</div>';
+  if(r.memo)h+='<h3><span>メモ</span></h3><div class="memo">'+linkifyUrls(esc(r.memo))+'</div>';
+  if(r.source)h+=renderSourceSection(r.source);
   h+='<div class="more"><button id="dPrint">印刷 / PDF</button><button id="dTxt">テキスト保存</button><button class="danger" id="dDel">削除</button></div>';
   $("vDetail").innerHTML=h;
 
@@ -1926,11 +2070,14 @@ function renderDetail(id){
   $("dCatPicker").onclick=function(e){
     var b=e.target.closest("[data-setcat]");if(!b)return;
     var cat=b.getAttribute("data-setcat");
-    var tags=(r.tags||[]).slice();
-    var idx=tags.indexOf(cat);
-    if(idx>=0)tags.splice(idx,1);
-    else tags.push(cat);
-    r.tags=tags;
+    var curCats=getRecipeCats(r).slice();
+    var subTags=(r.tags||[]).filter(function(t){return BASE_CATS.indexOf(t)<0&&!REDUNDANT_CAT_TAGS[t]});
+    var idx=curCats.indexOf(cat);
+    if(idx>=0)curCats.splice(idx,1);
+    else curCats.push(cat);
+    var orderedCats=BASE_CATS.filter(function(c){return curCats.indexOf(c)>=0});
+    r.tags=orderedCats.concat(subTags);
+    r.catEdited=true;
     save();renderList();renderDetail(r.id);
     toast("ジャンル「"+cat+"」を更新しました");
   };
@@ -2064,7 +2211,7 @@ function updateFormPreview(){
   var menu=p.group||autoBaseTitle(p.title);
   var cats=getRecipeCats(p);
   pv.innerHTML='<div><b>料理名:</b> '+esc(p.title||"（未入力）")+' / <b>まとめメニュー:</b> '+esc(menu||"−")+'</div>'
-    +'<div style="margin-top:4px"><b>分量:</b> '+esc(p.servings||"−")+' / <b>時間:</b> '+esc(p.time||"−")+' / <b>自動ジャンル:</b> '+(cats.length?cats.map(function(t){return esc(t)}).join("・"):"−")+' / <b>材料:</b> '+p.ingredients.length+'行 / <b>手順:</b> '+p.steps.length+'ステップ</div>';
+    +'<div style="margin-top:4px"><b>分量:</b> '+esc(p.servings||"−")+' / <b>時間:</b> '+esc(p.time||"−")+' / <b>自動ジャンル:</b> '+(cats.length?cats.map(function(t){return esc(t)}).join("・"):"−")+' / <b>材料:</b> '+p.ingredients.length+'行 / <b>手順:</b> '+p.steps.length+'ステップ / <b>情報源:</b> '+(p.source?"あり":"−")+'</div>';
 }
 function openForm(id,presetGroup){
   editing=id||null;
@@ -2129,14 +2276,15 @@ function toText(r){
   });
   o.push("","【作り方】");(r.steps||[]).forEach(function(s,n){o.push((n+1)+". "+s)});
   if(r.memo)o.push("","【メモ】",r.memo);
+  if(r.source)o.push("","【情報源】",r.source);
   return o.join("\n")+"\n";
 }
 function parseText(t){
-  var HEAD=/^[【\[■◆●▼＜<（(]?\s*(材料|作り方|つくり方|作りかた|手順|メモ|コツ|ポイント|備考)\s*[】\]＞>）)]?\s*[:：]?\s*(.*)$/;
+  var HEAD=/^[【\[■◆●▼＜<（(]?\s*(材料|作り方|つくり方|作りかた|手順|メモ|コツ|ポイント|備考|情報源|情報元|出典|参考(?:URL|元|サイト)?|引用元|URL)\s*[】\]＞>）)]?\s*[:：]?\s*(.*)$/i;
   var SUBGROUP=/^(?:【([^】]+)】|\[([^\]]+)\]|＜([^＞]+)＞)$/;
   var SERV=/[0-9０-９]+(?:\s*[〜~\-ー]\s*[0-9０-９]+)?\s*(?:人分|人前|個分|食分|枚分|本分|杯分)/;
   var TIME=/(?:約)?\s*[0-9０-９]+\s*(?:分|時間)/;
-  var r={title:"",group:"",servings:"",time:"",tags:[],ingredients:[],steps:[],memo:""},sec="head",memo=[],m;
+  var r={title:"",group:"",servings:"",time:"",tags:[],ingredients:[],steps:[],memo:"",source:""},sec="head",memo=[],srcs=[],m;
   String(t).split(/\r?\n/).forEach(function(raw){
     var l=raw.trim();
     if(!l)return;
@@ -2144,6 +2292,7 @@ function parseText(t){
       var h=m[1],rest=m[2];
       if(h==="材料"){sec="ing";var sv=l.match(SERV);if(sv&&!r.servings)r.servings=sv[0];rest=rest.replace(/^[（(].*?[）)]\s*/,"")}
       else if(/作り|つくり|手順/.test(h))sec="step";
+      else if(/情報源|情報元|出典|参考|引用元|URL/i.test(h))sec="src";
       else sec="memo";
       if(rest&&!/^[（(].*[）)]$/.test(rest))l=rest;else return;
     }
@@ -2153,6 +2302,7 @@ function parseText(t){
       if((m=l.match(/^(?:分量|人数)\s*[:：]\s*(.+)$/))){r.servings=m[1];return}
       if((m=l.match(/^(?:調理時間|所要時間|時間)\s*[:：]\s*(.+)$/))){r.time=m[1];return}
       if((m=l.match(/^(?:タグ|カテゴリ)\s*[:：]\s*(.+)$/))){r.tags=r.tags.concat(m[1].split(/[,、，\s#＃]+/).filter(Boolean));return}
+      if((m=l.match(SRC_LINE_RE))||(m=l.match(BARE_URL_LINE_RE))){if(srcs.indexOf(m[1].trim())<0)srcs.push(m[1].trim());return}
       if(/^[#＃]\S/.test(l)){r.tags=r.tags.concat(l.split(/[\s#＃]+/).filter(Boolean));return}
       if(!r.servings&&l.length<=20&&(m=l.match(SERV))){r.servings=m[0];return}
       if(!r.time&&l.length<=20&&(m=l.match(TIME))){r.time=m[0].replace(/^約\s*/,"約");return}
@@ -2164,9 +2314,20 @@ function parseText(t){
       r.ingredients.push(l.replace(/^[・●•\-*＊○◯]\s*/,""));
     }
     else if(sec==="step")r.steps.push(l.replace(/^(?:手順\s*)?(?:[0-9０-９]+\s*[.．、)）:：]?|[①-⑳]|[（(][0-9０-９]+[）)])\s*/,""));
-    else memo.push(l);
+    else if(sec==="src"){
+      var cl=l.replace(/^[・●•\-*＊○◯]?\s*(?:情報源|情報元|出典|参考(?:URL|元|サイト)?|引用元|URL|リンク)\s*[:：]\s*/i,"").replace(/^[・●•\-*＊○◯]\s*/,"").trim();
+      if(cl&&srcs.indexOf(cl)<0)srcs.push(cl);
+    }
+    else{
+      if((m=l.match(SRC_LINE_RE))||(m=l.match(BARE_URL_LINE_RE))){
+        if(srcs.indexOf(m[1].trim())<0)srcs.push(m[1].trim());
+      }else{
+        memo.push(l);
+      }
+    }
   });
   r.memo=memo.join("\n");
+  r.source=srcs.join("\n");
   return r;
 }
 function safeName(s){return String(s).replace(/[\\\/:*?"<>|\s]+/g,"_").slice(0,40)||"recipe"}
@@ -2290,7 +2451,7 @@ $("fileImport").onchange=function(){
       var n=0;
       arr.forEach(function(r){
         if(!r||!r.title)return;
-        var item={id:r.id||uid(),title:String(r.title),group:r.group||"",solo:!!r.solo,primary:!!r.primary,servings:r.servings||"",time:r.time||"",tags:r.tags||[],ingredients:r.ingredients||[],steps:r.steps||[],memo:r.memo||"",photo:r.photo||"",updated:r.updated||Date.now(),fav:!!r.fav,cooked:r.cooked||0,cookCount:r.cookCount||0};
+        var item={id:r.id||uid(),title:String(r.title),group:r.group||"",solo:!!r.solo,primary:!!r.primary,servings:r.servings||"",time:r.time||"",tags:r.tags||[],ingredients:r.ingredients||[],steps:r.steps||[],memo:r.memo||"",source:r.source||r.url||"",photo:r.photo||"",updated:r.updated||Date.now(),fav:!!r.fav,cooked:r.cooked||0,cookCount:r.cookCount||0};
         var i=recipes.findIndex(function(x){return x.id===item.id});
         if(i>=0)recipes[i]=item;else recipes.push(item);
         n++;
@@ -2299,6 +2460,7 @@ $("fileImport").onchange=function(){
       if(j&&Array.isArray(j.trash)){trash=cleanTrash(j.trash);saveTrash()}
       if(j&&Array.isArray(j.plan)){planIds=j.plan;savePlan()}
       if(j&&j.sort&&["new","cooked","stale"].indexOf(j.sort)>=0){$("sortSel").value=j.sort;saveSort(j.sort)}
+      migrateRecipes(recipes);
       save();renderList();renderPlanBar();show("vList");toast(n+"件を読み込みました");
     }catch(e){toast("読み込めないファイルです")}
   };
