@@ -22,6 +22,7 @@
   --acc-ink:#ffffff;
   --leaf:#527f65;
   --amber:#d48a29;
+  --amber-soft:#fbf3e4;
   --danger:#b84444;
   --danger-soft:#fbeeee;
   --sh:0 2px 6px rgba(30,45,38,.04),0 10px 28px rgba(30,45,38,.06);
@@ -45,6 +46,7 @@
     --acc-ink:#0f1713;
     --leaf:#7cb393;
     --amber:#ebb055;
+    --amber-soft:#332818;
     --danger:#e57e7e;
     --danger-soft:#382222;
     --sh:0 2px 6px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
@@ -52,12 +54,13 @@
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;overflow-x:hidden}
 body{
   background:var(--bg);
   color:var(--ink);
   font:15.5px/1.7 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Noto Sans JP",sans-serif;
   -webkit-font-smoothing:antialiased;
+  touch-action:pan-y;
 }
 h1,h2,h3,.card .t b{
   font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
@@ -85,7 +88,7 @@ header{
 }
 header h1{
   margin:0;font-size:20px;letter-spacing:.05em;
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
 }
 .brand-mark{
   width:30px;height:30px;border-radius:9px;
@@ -109,9 +112,48 @@ header h1 small{
 
 main{
   max-width:960px;margin:0 auto;
-  padding:16px 16px calc(108px + env(safe-area-inset-bottom,0px));
+  padding:14px 16px calc(108px + env(safe-area-inset-bottom,0px));
 }
 body.editing main{padding-bottom:32px}
+
+/* Today's Menu (Plan) Bar */
+.plan-bar{
+  background:var(--card);border:1.5px solid var(--acc);
+  border-radius:var(--r-lg);padding:10px 12px;margin:0 0 14px;
+  box-shadow:var(--sh);
+}
+.plan-bar[hidden]{display:none}
+.plan-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:8px;font-size:12.5px;font-weight:700;color:var(--acc);
+}
+.plan-head-acts{display:flex;gap:6px;align-items:center}
+.plan-head-acts button{
+  font-size:11.5px;padding:3px 9px;min-height:26px;border-radius:99px;
+}
+.plan-tabs{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;
+}
+.plan-tabs::-webkit-scrollbar{display:none}
+.plan-pill{
+  flex:none;display:inline-flex;align-items:center;gap:4px;
+  background:var(--bg-sub);border:1px solid var(--line);
+  border-radius:99px;padding:2px 4px 2px 11px;min-height:32px;
+  font-size:13px;font-weight:600;color:var(--ink);
+}
+.plan-pill.on{
+  background:var(--acc);color:var(--acc-ink);border-color:var(--acc);
+}
+.plan-pill-go{
+  border:none;background:none;color:inherit;padding:2px 2px;
+  min-height:26px;font-size:13px;font-weight:600;
+  max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.plan-pill-x{
+  border:none;background:none;color:inherit;opacity:.7;
+  width:24px;height:24px;min-height:24px;padding:0;border-radius:50%;
+  font-size:12px;
+}
 
 nav{
   position:fixed;left:0;right:0;bottom:0;z-index:30;
@@ -170,6 +212,7 @@ button{
 button:active{transform:scale(.98)}
 button.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
 button.soft{background:var(--acc-soft);color:var(--acc);border-color:transparent;font-weight:600}
+button.amber-soft{background:var(--amber-soft);color:var(--amber);border-color:transparent;font-weight:600}
 button.danger{color:var(--danger)}
 button.danger.primary{background:var(--danger);color:#fff;border-color:var(--danger)}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
@@ -185,9 +228,9 @@ input[type=text],input[type=search],input[type=number],textarea,select{
 select{width:auto;padding:8px 12px;font-size:13.5px;font-weight:500}
 textarea{min-height:150px;resize:vertical;line-height:1.65}
 
-.tools{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.tools{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
 .srow{display:flex;gap:8px;align-items:center}
-.search-wrap{position:relative;flex:1;display:flex;align-items:center}
+.search-wrap{position:relative;flex:1;display:flex;align-items:center;min-width:0}
 .search-wrap .ico{position:absolute;left:13px;color:var(--muted);pointer-events:none}
 .search-wrap input{padding-left:38px;padding-right:34px}
 .q-clear{
@@ -210,12 +253,42 @@ textarea{min-height:150px;resize:vertical;line-height:1.65}
   background:var(--acc);color:var(--acc-ink);
   border-color:var(--acc);font-weight:600;
 }
+.tag.ing-toggle.on{
+  background:var(--acc-soft);color:var(--acc);border-color:var(--acc);
+}
+
+/* Fridge / Ingredient Chip Filter Panel */
+.ing-panel{
+  background:var(--bg-sub);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:9px 11px;
+}
+.ing-panel[hidden]{display:none}
+.ing-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:12px;color:var(--sub);font-weight:600;margin-bottom:6px;
+}
+.ing-panel-head button{
+  font-size:11.5px;padding:2px 9px;min-height:24px;border-radius:99px;
+}
+.ing-chips{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.ing-chip{
+  font-size:12.5px;padding:4px 11px;min-height:29px;
+  border-radius:99px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-weight:500;
+}
+.ing-chip.on{
+  background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600;
+}
 
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(164px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
   gap:16px 14px;
+  min-width:0;
 }
+.grid > *{min-width:0}
 @media (min-width:680px){
   .grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px 18px}
 }
@@ -223,8 +296,10 @@ textarea{min-height:150px;resize:vertical;line-height:1.65}
   position:relative;
   background:var(--card);border:1px solid var(--line);
   border-radius:var(--r-lg);overflow:hidden;cursor:pointer;
-  text-align:left;padding:0;display:flex;flex-direction:column;
-  width:100%;box-shadow:var(--sh);
+  text-align:left;padding:0;
+  display:flex;flex-direction:column;
+  align-items:stretch;justify-content:flex-start;
+  width:100%;min-width:0;box-shadow:var(--sh);
   transition:transform .16s ease,box-shadow .16s ease;
 }
 .card:hover{transform:translateY(-2px)}
@@ -240,25 +315,46 @@ textarea{min-height:150px;resize:vertical;line-height:1.65}
 }
 .card .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .card .ph .ph-svg{width:38px;height:38px;opacity:.45;stroke:var(--sub);stroke-width:1.5;fill:none}
-.card .t{padding:11px 13px 13px;display:flex;flex-direction:column;gap:4px;flex:1}
+.card .t{
+  padding:11px 13px 13px;
+  display:flex;flex-direction:column;align-items:stretch;
+  gap:4px;flex:1;width:100%;min-width:0;
+}
 .card .t b{
   font-size:15.5px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
   overflow:hidden;line-height:1.4;
+  width:100%;min-width:0;
+  overflow-wrap:anywhere;word-break:break-word;
 }
 .card .t .var-line{
   font-size:11.5px;color:var(--acc);font-weight:600;
+  display:block;width:100%;max-width:100%;min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .card .t .subline{
   display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   font-size:12px;color:var(--sub);margin-top:auto;padding-top:2px;
+  width:100%;min-width:0;
 }
 .star{
   position:absolute;top:8px;right:8px;
   background:rgba(25,30,28,.55);backdrop-filter:blur(4px);
   color:#f7c948;width:26px;height:26px;border-radius:50%;
   display:grid;place-items:center;font-size:14px;line-height:1;
+}
+.pin-btn{
+  position:absolute;bottom:8px;right:8px;
+  background:rgba(255,255,255,.88);backdrop-filter:blur(4px);
+  color:var(--sub);border:1px solid var(--line);
+  padding:2px 8px;min-height:25px;border-radius:99px;
+  font-size:11px;font-weight:700;z-index:2;
+}
+@media (prefers-color-scheme:dark){
+  .pin-btn{background:rgba(28,34,31,.88)}
+}
+.pin-btn.on{
+  background:var(--acc);color:var(--acc-ink);border-color:var(--acc);
 }
 .stack-badge{
   position:absolute;top:8px;left:8px;
@@ -313,22 +409,42 @@ textarea{min-height:150px;resize:vertical;line-height:1.65}
   border-radius:var(--r-lg);display:block;margin-bottom:18px;
   box-shadow:var(--sh);border:1px solid var(--line);
 }
-h2{font-size:24px;line-height:1.35;margin:0 0 8px}
+h2{font-size:24px;line-height:1.35;margin:0 0 8px;overflow-wrap:anywhere}
 h3{
   font-size:16.5px;margin:26px 0 10px;
   padding-left:11px;border-left:3.5px solid var(--acc);
   line-height:1.3;display:flex;align-items:center;justify-content:space-between;
 }
 .meta{color:var(--sub);font-size:13px;margin:6px 0 10px}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 16px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px;align-items:center}
 .chip{
   font-size:12.5px;padding:3px 11px;border-radius:99px;
   background:var(--bg-sub);color:var(--sub);font-weight:500;
 }
-.chip.time-chip{cursor:pointer;color:var(--acc);background:var(--acc-soft)}
+.chip.cat-chip{background:var(--acc-soft);color:var(--acc);font-weight:600}
+.chip.edit-cat-btn{
+  cursor:pointer;border:1px dashed var(--line);background:transparent;
+  font-size:12px;padding:2px 9px;min-height:26px;
+}
+.cat-picker{
+  display:flex;gap:6px;flex-wrap:wrap;
+  background:var(--bg-sub);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:8px 10px;margin:0 0 14px;
+}
+.cat-picker[hidden]{display:none}
+.cat-picker button{
+  font-size:12.5px;padding:4px 11px;min-height:30px;border-radius:99px;
+}
+.cat-picker button.on{
+  background:var(--acc);color:var(--acc-ink);border-color:var(--acc);
+}
 
-.acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
-.acts button{padding:10px 12px;font-size:14px;font-weight:600}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+@media (max-width:420px){
+  .acts{grid-template-columns:1fr 1fr}
+  .acts #dShop{grid-column:1 / -1}
+}
+.acts button{padding:10px 10px;font-size:13.5px;font-weight:600}
 .more{
   display:flex;gap:8px;flex-wrap:wrap;
   margin-top:30px;padding-top:18px;border-top:1px solid var(--line);
@@ -361,7 +477,7 @@ h3{
   font-size:13px;font-weight:700;padding:7px 15px;
   cursor:default;letter-spacing:.03em;
 }
-.ing-name{flex:1}
+.ing-name{flex:1;min-width:0;overflow-wrap:anywhere}
 .ing-qty{font-weight:600;color:var(--ink)}
 
 ol.steps{list-style:none;counter-reset:st;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
@@ -381,7 +497,7 @@ ol.steps li::before{
   background:var(--acc);color:var(--acc-ink);
   display:grid;place-items:center;font-size:12.5px;font-weight:700;
 }
-.step-body{flex:1}
+.step-body{flex:1;min-width:0;overflow-wrap:anywhere}
 .tlink{
   display:inline-flex;align-items:center;gap:3px;
   padding:1px 8px;margin:0 2px;border-radius:99px;
@@ -394,6 +510,7 @@ ol.steps li::before{
   white-space:pre-wrap;background:var(--card);
   border:1px solid var(--line);border-radius:var(--r-md);
   padding:13px 15px;font-size:14.5px;color:var(--ink);
+  overflow-wrap:anywhere;
 }
 .scaler{
   display:inline-flex;align-items:center;gap:6px;
@@ -445,7 +562,7 @@ label{display:block;font-size:13.5px;font-weight:600;color:var(--sub);margin:14p
 }
 .si:last-child{border-bottom:none}
 .si input{width:20px;height:20px;flex:none;accent-color:var(--acc);cursor:pointer}
-.si .n{flex:1;cursor:pointer}
+.si .n{flex:1;cursor:pointer;min-width:0;overflow-wrap:anywhere}
 .si small{display:block;color:var(--sub);font-size:11.5px;line-height:1.4;margin-top:2px}
 .si.done .n{text-decoration:line-through;opacity:.5}
 .si .x{
@@ -489,26 +606,27 @@ label{display:block;font-size:13.5px;font-weight:600;color:var(--sub);margin:14p
 .tbar{
   position:fixed;left:16px;right:16px;
   bottom:calc(74px + env(safe-area-inset-bottom,0px));
-  max-width:460px;margin:0 auto;z-index:40;
+  max-width:480px;margin:0 auto;z-index:40;
   background:var(--card);color:var(--ink);
   border:1.5px solid var(--acc);border-radius:16px;
   padding:10px 14px;box-shadow:var(--sh-lg);
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
 .tbar[hidden]{display:none}
-.tbar.ringing{background:var(--acc);color:var(--acc-ink);animation:pulse 1s infinite}
+.tbar.ringing{background:var(--acc);color:var(--acc-ink);animation:pulse .85s infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
 .tbar-disp{
   font-variant-numeric:tabular-nums;
-  font-size:21px;font-weight:700;letter-spacing:.03em;min-width:68px;
+  font-size:21px;font-weight:700;letter-spacing:.03em;min-width:66px;
+  cursor:pointer;
 }
 .tbar-presets{display:flex;gap:4px;flex:1;flex-wrap:wrap}
 .tbar-presets button{
   padding:4px 9px;min-height:30px;font-size:12px;
-  border-radius:99px;background:var(--bg-sub);border:none;
+  border-radius:99px;background:var(--bg-sub);border:none;color:var(--ink);
 }
-.tbar-ctrls{display:flex;gap:6px;align-items:center}
-.tbar-ctrls button{min-height:32px;padding:5px 11px;font-size:12.5px;border-radius:99px}
+.tbar-ctrls{display:flex;gap:5px;align-items:center}
+.tbar-ctrls button{min-height:32px;padding:5px 10px;font-size:12.5px;border-radius:99px}
 
 .ov{
   position:fixed;inset:0;z-index:50;
@@ -567,7 +685,7 @@ pre.ex{
 
 @media print{
   :root:not([data-theme=light]),:root{--bg:#fff;--card:#fff;--ink:#000;--sub:#444;--line:#bbb;--acc:#222;--leaf:#333}
-  header,nav,.ov,.bar,.acts,.more,.tools,#toast,#dCI,.scaler button,.star,.tbar,.vbar-wrap{display:none!important}
+  header,nav,.ov,.bar,.acts,.more,.tools,#toast,#dCI,.scaler button,.star,.pin-btn,.tbar,.vbar-wrap,.plan-bar,.cat-picker,.edit-cat-btn{display:none!important}
   body{background:#fff;color:#000;font-size:11pt;line-height:1.55}
   main{max-width:none;padding:0}
   .hero{max-height:6.5cm;border-radius:0;box-shadow:none}
@@ -584,7 +702,7 @@ pre.ex{
 <body>
 <header>
   <div class="hbar">
-    <h1>
+    <h1 id="brandHome">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
       </span>
@@ -601,6 +719,18 @@ pre.ex{
 </header>
 
 <main>
+  <!-- Shared Today's Menu (Plan) Keep Bar -->
+  <div class="plan-bar" id="planBar" hidden>
+    <div class="plan-head">
+      <span id="planTitle">📌 今日つくる</span>
+      <div class="plan-head-acts">
+        <button type="button" class="soft" id="planToShop">＋ 買い物へ</button>
+        <button type="button" id="planClear">クリア</button>
+      </div>
+    </div>
+    <div class="plan-tabs" id="planTabs"></div>
+  </div>
+
   <section class="view show" id="vList">
     <div class="tools">
       <div class="srow">
@@ -616,6 +746,13 @@ pre.ex{
         </select>
       </div>
       <div class="tags" id="tagBar"></div>
+      <div class="ing-panel" id="ingPanel" hidden>
+        <div class="ing-panel-head">
+          <span>冷蔵庫の食材で絞り込み（複数選択可）</span>
+          <button type="button" id="ingClearBtn" hidden>選択解除</button>
+        </div>
+        <div class="ing-chips" id="ingChips"></div>
+      </div>
     </div>
     <div class="grid" id="grid"></div>
     <div class="empty" id="empty" hidden></div>
@@ -643,7 +780,7 @@ pre.ex{
         <button type="button" class="tag" id="btnInsertTpl">テンプレート挿入</button>
       </div>
     </div>
-    <textarea id="fText" style="min-height:280px" placeholder="鶏の照り焼き（定番）&#10;分量: 2人分&#10;調理時間: 20分&#10;タグ: 和食, 肉&#10;&#10;【材料】&#10;鶏もも肉 300g&#10;【たれ】&#10;醤油 大さじ2&#10;みりん 大さじ2&#10;&#10;【作り方】&#10;1. 肉を一口大に切る&#10;2. フライパンで中火5分焼く&#10;&#10;【メモ】&#10;弱火でじっくりからめる"></textarea>
+    <textarea id="fText" style="min-height:280px" placeholder="鶏の照り焼き（定番）&#10;分量: 2人分&#10;調理時間: 20分&#10;タグ: 主菜, 作り置き・弁当&#10;&#10;【材料】&#10;鶏もも肉 300g&#10;【たれ】&#10;醤油 大さじ2&#10;みりん 大さじ2&#10;&#10;【作り方】&#10;1. 肉を一口大に切る&#10;2. フライパンで中火5分焼く&#10;&#10;【メモ】&#10;弱火でじっくりからめる"></textarea>
     <p class="meta" id="fCount"></p>
 
     <details class="pv-box" id="fPvWrap">
@@ -698,7 +835,8 @@ pre.ex{
 
 【出力形式のルール】
 ・1行目は「料理名」のみを書く（同じ料理の別バージョンの場合は「料理名（特徴）」と書く）
-・続けて「分量: 〇人分」「調理時間: 〇分」「タグ: タグ1, タグ2」を1行ずつ書く
+・続けて「分量: 〇人分」「調理時間: 〇分」「タグ: ジャンル1, ジャンル2」を1行ずつ書く
+・「タグ:」には必ず【ご飯・麺 / 主菜 / 副菜・おつまみ / 汁物 / 作り置き・弁当】の中から該当するジャンルを1つ以上含める（丼・炊き込みご飯・とうめし・チャーハン・焼きそば・パスタ・うどん等は必ず「ご飯・麺」を含めること）
 ・【材料】の下は1行1品目とし、「食材名 分量」のように食材名と分量の間を半角スペースで区切る（例: 鶏もも肉 300g、醤油 大さじ2）
 ・合わせ調味料などがある場合は【たれ】【A】のように小見出し行を入れる
 ・【作り方】の下は「1. 」「2. 」のように番号付きで1行1手順ずつ書く
@@ -716,7 +854,7 @@ pre.ex{
     <details><summary>レシピの書き方・まとめて登録</summary>
       <ul>
         <li><b>1行目</b>が料理名になります</li>
-        <li><b>分量: 2人分</b>、<b>調理時間: 20分</b>、<b>タグ: 和食, 肉</b>（または <b>#和食 #肉</b>）を自動認識します</li>
+        <li><b>分量: 2人分</b>、<b>調理時間: 20分</b>、<b>タグ: 主菜, 作り置き・弁当</b>を自動認識します（タグ未記入でも料理名や材料から自動でジャンル分けされます）</li>
         <li><b>【材料】</b>は1行1品目（<code>【たれ】</code> <code>【A】</code> などのグループ見出しにも対応）</li>
         <li><b>【作り方】</b>は1行1手順（本文中の「5分」などをタップするとタイマーが起動します）</li>
         <li>複数のレシピは、間に <b>---</b> だけの行を入れると一度にまとめて追加できます</li>
@@ -724,7 +862,7 @@ pre.ex{
       <pre class="ex" id="exSingle">鶏の照り焼き（定番）
 分量: 2人分
 調理時間: 20分
-タグ: 和食, 肉
+タグ: 主菜, 作り置き・弁当
 
 【材料】
 鶏もも肉 300g
@@ -761,7 +899,7 @@ pre.ex{
 
 <!-- Floating Kitchen Timer -->
 <div class="tbar" id="timerBar" hidden>
-  <div class="tbar-disp" id="tDisp">00:00</div>
+  <div class="tbar-disp" id="tDisp" title="タップでテスト音">00:00</div>
   <div class="tbar-presets">
     <button type="button" data-tm="60">+1分</button>
     <button type="button" data-tm="180">+3分</button>
@@ -771,6 +909,7 @@ pre.ex{
   <div class="tbar-ctrls">
     <button type="button" class="primary" id="tToggle">開始</button>
     <button type="button" id="tReset">リセット</button>
+    <button type="button" id="tSoundTest" title="アラーム音の確認" aria-label="音確認">🔔</button>
     <button type="button" id="tClose" aria-label="閉じる">✕</button>
   </div>
 </div>
@@ -848,11 +987,15 @@ pre.ex{
 (function(){
 "use strict";
 var KEY="recipe-book-v1", DB_NAME="recipe-book-db", DB_STORE="kv";
-var recipes=[], shop=[], trash=[], editing=null, photo="", activeTag="", favOnly=false;
+var recipes=[], shop=[], trash=[], planIds=[], editing=null, photo="", activeTag="", favOnly=false;
+var ingPanelOpen=false, selectedIngs=[];
+var curView="vList", curDetailId=null, navStack=[], suppressPush=false;
+var cookSession={};
 var db=null, wakeLock=null;
 var $=function(id){return document.getElementById(id)};
 
-var TPL_TEXT="\n分量: 2人分\n調理時間: 20分\nタグ: \n\n【材料】\n\n\n【作り方】\n1. \n\n【メモ】\n";
+var BASE_CATS=["ご飯・麺","主菜","副菜・おつまみ","汁物","作り置き・弁当"];
+var TPL_TEXT="\n分量: 2人分\n調理時間: 20分\nタグ: 主菜\n\n【材料】\n\n\n【作り方】\n1. \n\n【メモ】\n";
 
 // ---- IndexedDB + localStorage fallback ----
 function openDB(cb){
@@ -871,7 +1014,7 @@ function idbGetAll(cb){
   if(!db){cb(null);return}
   try{
     var tx=db.transaction(DB_STORE,"readonly"),st=tx.objectStore(DB_STORE),out={};
-    ["recipes","shop","trash","seeded"].forEach(function(k){
+    ["recipes","shop","trash","seeded","sort","plan"].forEach(function(k){
       var r=st.get(k);
       r.onsuccess=function(){out[k]=r.result};
     });
@@ -884,15 +1027,22 @@ function idbPut(k,v){
     try{
       var tx=db.transaction(DB_STORE,"readwrite");
       tx.objectStore(DB_STORE).put(v,k);
-      return true;
     }catch(e){}
   }
-  try{localStorage.setItem(KEY+(k==="recipes"?"":"-"+k),typeof v==="string"?v:JSON.stringify(v));return true}
-  catch(e){toast("保存に失敗しました");return false}
+  try{
+    localStorage.setItem(KEY+(k==="recipes"?"":"-"+k),typeof v==="string"?v:JSON.stringify(v));
+    return true;
+  }catch(e){
+    if(db)return true;
+    toast("保存に失敗しました");
+    return false;
+  }
 }
 function save(){return idbPut("recipes",recipes)}
 function saveShop(){return idbPut("shop",shop)}
 function saveTrash(){return idbPut("trash",trash)}
+function savePlan(){return idbPut("plan",planIds)}
+function saveSort(val){return idbPut("sort",val)}
 
 function cleanTrash(arr){
   if(!Array.isArray(arr))return[];
@@ -901,12 +1051,14 @@ function cleanTrash(arr){
 }
 
 function loadLegacy(){
-  var out={recipes:null,shop:null,trash:null,seeded:null};
+  var out={recipes:null,shop:null,trash:null,seeded:null,sort:null,plan:null};
   try{
     var r=localStorage.getItem(KEY);if(r)out.recipes=JSON.parse(r);
     var s=localStorage.getItem(KEY+"-shop");if(s)out.shop=JSON.parse(s);
     var t=localStorage.getItem(KEY+"-trash");if(t)out.trash=JSON.parse(t);
     var d=localStorage.getItem(KEY+"-seeded");if(d)out.seeded=d;
+    var sr=localStorage.getItem(KEY+"-sort");if(sr)out.sort=sr;
+    var pl=localStorage.getItem(KEY+"-plan");if(pl)out.plan=JSON.parse(pl);
   }catch(e){}
   return out;
 }
@@ -919,13 +1071,21 @@ function initData(){
       recipes=Array.isArray(res&&res.recipes)?res.recipes:(Array.isArray(leg.recipes)?leg.recipes:[]);
       shop=Array.isArray(res&&res.shop)?res.shop:(Array.isArray(leg.shop)?leg.shop:[]);
       trash=cleanTrash(Array.isArray(res&&res.trash)?res.trash:leg.trash);
+      var savedSort=(res&&res.sort)||leg.sort||"new";
+      if(["new","cooked","stale"].indexOf(savedSort)>=0)$("sortSel").value=savedSort;
+      var rawPlan=Array.isArray(res&&res.plan)?res.plan:(Array.isArray(leg.plan)?leg.plan:[]);
       if(!seeded&&!recipes.length){
         seed();
         idbPut("seeded","1");
       }else if(res&&res.recipes==null&&recipes.length){
         save();saveShop();saveTrash();idbPut("seeded","1");
       }
+      var validIds={};
+      recipes.forEach(function(r){validIds[r.id]=1});
+      planIds=rawPlan.filter(function(id){return validIds[id]});
+      try{history.replaceState({view:"vList",detailId:null},"")}catch(e){}
       renderList();
+      renderPlanBar();
       updateBadge();
     });
   });
@@ -946,28 +1106,138 @@ function syncWakeLock(){
   }
 }
 document.addEventListener("visibilitychange",function(){
-  if(document.visibilityState==="visible")syncWakeLock();
+  if(document.visibilityState==="visible"){
+    syncWakeLock();
+    if(tmRun)tickTimer();
+  }
 });
 
-// ---- Built-in Kitchen Timer (Web Audio API) ----
-var tmSec=0, tmRun=false, tmInt=null, audioCtx=null;
-function beep(){
+// ---- Built-in Kitchen Timer (Web Audio API + HTML5 WAV Fallback for iOS) ----
+var tmSec=0, tmEndAt=0, tmRun=false, tmInt=null, tmRingInt=null, audioCtx=null, alarmAudio=null;
+
+function buildWavDataURI(){
   try{
+    var sr=22050, dur=1.25, n=Math.floor(sr*dur);
+    var buf=new ArrayBuffer(44+n*2), v=new DataView(buf);
+    var wStr=function(o,s){for(var i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+    wStr(0,"RIFF");v.setUint32(4,36+n*2,true);wStr(8,"WAVE");wStr(12,"fmt ");
+    v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+    v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+    wStr(36,"data");v.setUint32(40,n*2,true);
+    var windows=[[0.0,0.11],[0.15,0.26],[0.30,0.41],[0.62,0.73],[0.77,0.88],[0.92,1.08]];
+    for(var i=0;i<n;i++){
+      var t=i/sr, amp=0;
+      for(var w=0;w<windows.length;w++){
+        var a=windows[w][0], b=windows[w][1];
+        if(t>=a&&t<=b){
+          var env=Math.min(1,(t-a)/0.008)*Math.max(0,1-(t-a)/(b-a)*0.6);
+          amp=(Math.sin(2*Math.PI*1046.5*t)*0.7+Math.sin(2*Math.PI*2093*t)*0.3)*env*0.55;
+          break;
+        }
+      }
+      var s=Math.max(-1,Math.min(1,amp));
+      v.setInt16(44+i*2,s*32767,true);
+    }
+    var bytes=new Uint8Array(buf), bin="";
+    for(var j=0;j<bytes.length;j+=4096){
+      bin+=String.fromCharCode.apply(null,bytes.subarray(j,Math.min(bytes.length,j+4096)));
+    }
+    return "data:audio/wav;base64,"+btoa(bin);
+  }catch(e){return ""}
+}
+
+function unlockAudio(){
+  try{
+    if(navigator.audioSession){
+      try{navigator.audioSession.type="playback"}catch(e){}
+    }
     var C=window.AudioContext||window.webkitAudioContext;
-    if(!C)return;
-    if(!audioCtx)audioCtx=new C();
-    if(audioCtx.state==="suspended")audioCtx.resume();
-    [0,0.18,0.36,0.75,0.93,1.11].forEach(function(ofs){
-      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      o.type="sine";o.frequency.value=880;
-      g.gain.setValueAtTime(0.18,audioCtx.currentTime+ofs);
-      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+ofs+0.13);
-      o.connect(g);g.connect(audioCtx.destination);
-      o.start(audioCtx.currentTime+ofs);o.stop(audioCtx.currentTime+ofs+0.14);
-    });
-    if(navigator.vibrate)navigator.vibrate([200,100,200,100,300]);
+    if(C){
+      if(!audioCtx)audioCtx=new C();
+      if(audioCtx.state==="suspended")audioCtx.resume();
+      var b=audioCtx.createBuffer(1,1,22050);
+      var src=audioCtx.createBufferSource();
+      src.buffer=b;src.connect(audioCtx.destination);
+      if(src.start)src.start(0);
+    }
+    if(!alarmAudio){
+      var uri=buildWavDataURI();
+      if(uri){
+        alarmAudio=new Audio(uri);
+        alarmAudio.preload="auto";
+      }
+    }
+    if(alarmAudio&&!tmRingInt){
+      alarmAudio.muted=true;
+      var p=alarmAudio.play();
+      if(p&&p.then){
+        p.then(function(){
+          alarmAudio.pause();
+          alarmAudio.currentTime=0;
+          alarmAudio.muted=false;
+        }).catch(function(){alarmAudio.muted=false});
+      }else{
+        alarmAudio.pause();
+        alarmAudio.currentTime=0;
+        alarmAudio.muted=false;
+      }
+    }
   }catch(e){}
 }
+
+function beep(){
+  try{
+    if(navigator.audioSession){
+      try{navigator.audioSession.type="playback"}catch(e){}
+    }
+    var C=window.AudioContext||window.webkitAudioContext;
+    if(C){
+      if(!audioCtx)audioCtx=new C();
+      if(audioCtx.state==="suspended")audioCtx.resume();
+      var now=audioCtx.currentTime;
+      [0,0.15,0.30,0.62,0.77,0.92].forEach(function(ofs){
+        var o1=audioCtx.createOscillator(),o2=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o1.type="triangle";o1.frequency.value=1046.5;
+        o2.type="sine";o2.frequency.value=2093.0;
+        g.gain.setValueAtTime(0.32,now+ofs);
+        g.gain.exponentialRampToValueAtTime(0.001,now+ofs+0.12);
+        o1.connect(g);o2.connect(g);g.connect(audioCtx.destination);
+        o1.start(now+ofs);o2.start(now+ofs);
+        o1.stop(now+ofs+0.13);o2.stop(now+ofs+0.13);
+      });
+    }
+    if(alarmAudio){
+      alarmAudio.muted=false;
+      alarmAudio.currentTime=0;
+      var pr=alarmAudio.play();
+      if(pr&&pr.catch)pr.catch(function(){});
+    }
+    if(navigator.vibrate)navigator.vibrate([220,100,220,100,320]);
+  }catch(e){}
+}
+
+function stopRinging(){
+  if(tmRingInt){clearInterval(tmRingInt);tmRingInt=null}
+  $("timerBar").classList.remove("ringing");
+  if(alarmAudio){try{alarmAudio.pause();alarmAudio.currentTime=0}catch(e){}}
+}
+
+function startRinging(){
+  stopRinging();
+  $("timerBar").hidden=false;
+  $("timerBar").classList.add("ringing");
+  beep();
+  var count=0;
+  tmRingInt=setInterval(function(){
+    count++;
+    if(count>=6||!$("timerBar").classList.contains("ringing")){
+      stopRinging();
+      return;
+    }
+    beep();
+  },2000);
+}
+
 function fmtTimer(s){
   var m=Math.floor(s/60),sec=s%60;
   return ("0"+m).slice(-2)+":"+("0"+sec).slice(-2);
@@ -983,46 +1253,69 @@ function stopTimerLoop(){
   tmRun=false;
   if(tmInt){clearInterval(tmInt);tmInt=null}
 }
+function tickTimer(){
+  if(!tmRun)return;
+  var rem=Math.max(0,Math.ceil((tmEndAt-Date.now())/1000));
+  if(rem!==tmSec){
+    tmSec=rem;
+    updTimerUI();
+  }
+  if(tmSec<=0){
+    stopTimerLoop();
+    updTimerUI();
+    startRinging();
+    toast("タイマーの時間になりました");
+  }
+}
 function startTimer(sec){
+  unlockAudio();
+  stopRinging();
   $("timerBar").hidden=false;
-  $("timerBar").classList.remove("ringing");
   if(typeof sec==="number"&&sec>0)tmSec=sec;
   if(tmSec<=0)tmSec=60;
   stopTimerLoop();
   tmRun=true;
+  tmEndAt=Date.now()+tmSec*1000;
   updTimerUI();
-  tmInt=setInterval(function(){
-    if(tmSec>0){
-      tmSec--;
-      updTimerUI();
-      if(tmSec===0){
-        stopTimerLoop();
-        $("timerBar").classList.add("ringing");
-        updTimerUI();
-        beep();
-        toast("タイマーの時間になりました");
-      }
-    }
-  },1000);
+  tmInt=setInterval(tickTimer,250);
 }
 $("btnTimerToggle").onclick=function(){
+  unlockAudio();
   var b=$("timerBar");
+  if(b.classList.contains("ringing")){stopRinging();return}
   b.hidden=!b.hidden;
-  b.classList.remove("ringing");
   updTimerUI();
 };
 $("timerBar").onclick=function(e){
+  unlockAudio();
+  var wasRinging=$("timerBar").classList.contains("ringing");
+  stopRinging();
+  if(e.target.id==="tDisp"){
+    beep();
+    toast("アラーム音を鳴らしました");
+    return;
+  }
   var b=e.target.closest("button");if(!b)return;
-  $("timerBar").classList.remove("ringing");
+  if(b.id==="tSoundTest"){
+    beep();
+    toast("アラーム音をテスト再生しました");
+    return;
+  }
   var add=b.getAttribute("data-tm");
   if(add){
-    tmSec+=parseInt(add,10);
+    var delta=parseInt(add,10);
+    tmSec+=delta;
+    if(tmRun)tmEndAt+=delta*1000;
     updTimerUI();
     return;
   }
   if(b.id==="tToggle"){
-    if(tmRun){stopTimerLoop();updTimerUI()}
-    else startTimer(tmSec||180);
+    if(wasRinging)return;
+    if(tmRun){
+      tmSec=Math.max(0,Math.ceil((tmEndAt-Date.now())/1000));
+      stopTimerLoop();
+      updTimerUI();
+    }else startTimer(tmSec||180);
   }else if(b.id==="tReset"){
     stopTimerLoop();tmSec=0;updTimerUI();
   }else if(b.id==="tClose"){
@@ -1038,17 +1331,109 @@ function toast(m,label,fn){
 }
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function uid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-function show(id){
+
+// ---- Navigation History & Swipe-Back Support ----
+function show(id,opts){
+  opts=opts||{};
+  var prevView=curView, prevDetail=curDetailId;
+  if(id!=="vDetail")curDetailId=null;
+  if(!opts.fromPop&&!suppressPush&&(id!==prevView||(id==="vDetail"&&curDetailId!==prevDetail))){
+    navStack.push({view:prevView,detailId:prevDetail});
+    if(navStack.length>20)navStack.shift();
+    try{history.pushState({view:id,detailId:curDetailId},"")}catch(e){}
+  }
+  curView=id;
   ["vList","vDetail","vForm","vShop","vTrash","vHelp"].forEach(function(v){$(v).classList.toggle("show",v===id)});
   document.body.classList.toggle("editing",id==="vForm");
   $("btnHome").classList.toggle("on",id==="vList"||id==="vDetail");
   $("btnShop").classList.toggle("on",id==="vShop");
   $("btnMore").classList.toggle("on",id==="vTrash"||id==="vHelp");
+  renderPlanBar();
   window.scrollTo(0,0);
   syncWakeLock();
 }
 
-function allTags(){var m={};recipes.forEach(function(r){(r.tags||[]).forEach(function(t){m[t]=1})});return Object.keys(m).sort()}
+function goBack(){
+  if(!$("dlg").hidden){closeDlg();return true}
+  if(!$("grpModal").hidden){$("grpModal").hidden=true;return true}
+  if(!$("sheet").hidden){$("sheet").hidden=true;return true}
+  if(curView==="vForm"&&editing){
+    renderDetail(editing);
+    return true;
+  }
+  if(navStack.length){
+    var prev=navStack.pop();
+    suppressPush=true;
+    if(prev.view==="vDetail"&&prev.detailId&&recipes.some(function(x){return x.id===prev.detailId})){
+      renderDetail(prev.detailId);
+    }else if(prev.view&&prev.view!=="vForm"){
+      if(prev.view==="vShop")renderShop();
+      if(prev.view==="vTrash")renderTrash();
+      show(prev.view,{fromPop:true});
+    }else{
+      show("vList",{fromPop:true});
+    }
+    suppressPush=false;
+    return true;
+  }
+  if(curView!=="vList"){
+    show("vList",{fromPop:true});
+    return true;
+  }
+  return false;
+}
+
+window.addEventListener("popstate",function(e){
+  if(!$("dlg").hidden){closeDlg();return}
+  if(!$("grpModal").hidden){$("grpModal").hidden=true;return}
+  if(!$("sheet").hidden){$("sheet").hidden=true;return}
+  var st=e.state;
+  suppressPush=true;
+  if(st&&st.view){
+    if(navStack.length)navStack.pop();
+    if(st.view==="vDetail"&&st.detailId&&recipes.some(function(x){return x.id===st.detailId})){
+      renderDetail(st.detailId);
+    }else if(st.view==="vShop"){
+      renderShop();show("vShop",{fromPop:true});
+    }else if(st.view==="vTrash"){
+      renderTrash();show("vTrash",{fromPop:true});
+    }else{
+      show(st.view==="vForm"?"vList":st.view,{fromPop:true});
+    }
+  }else{
+    show("vList",{fromPop:true});
+  }
+  suppressPush=false;
+});
+
+// Left-to-Right Swipe Back Handler for iPhone / iPad
+(function(){
+  var sx=0, sy=0, st=0, ignoreSwipe=false;
+  document.addEventListener("touchstart",function(e){
+    if(!e.touches||e.touches.length!==1)return;
+    var t=e.touches[0];
+    sx=t.clientX;sy=t.clientY;st=Date.now();
+    var el=e.target;
+    ignoreSwipe=!!(el&&el.closest&&el.closest("input,textarea,select,.tags,.vtabs,.plan-tabs,.tbar"));
+    // Prevent iOS standalone full-app exit when swiping from left edge on subviews
+    if(sx<=24&&curView!=="vList"){
+      try{e.preventDefault()}catch(err){}
+    }
+  },{passive:false});
+  document.addEventListener("touchend",function(e){
+    if(ignoreSwipe||!e.changedTouches||!e.changedTouches.length)return;
+    var t=e.changedTouches[0];
+    var dx=t.clientX-sx, dy=t.clientY-sy, dt=Date.now()-st;
+    if(dt<650&&dx>68&&Math.abs(dx)>Math.abs(dy)*1.8){
+      if(curView!=="vList"||!$("sheet").hidden||!$("grpModal").hidden||!$("dlg").hidden){
+        goBack();
+      }
+    }
+  },{passive:true});
+})();
+
+$("brandHome").onclick=function(){show("vList")};
+
 function dstr(t){var d=new Date(t);return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()}
 
 // ---- numbers / scaling & dish normalization ----
@@ -1073,6 +1458,87 @@ function snorm(x){
   var t=String(x==null?"":x).normalize("NFKC").toLowerCase().replace(/[ァ-ヶ]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-96)});
   SYN.forEach(function(p){t=t.split(p[0]).join(p[1])});
   return t;
+}
+
+// ---- Smart Genre Auto-Inference ----
+function getRecipeCats(r){
+  var cats={}, tags=(r.tags||[]).join(" ");
+  var titleGrp=(r.title||"")+" "+(r.group||"");
+  var ingLines=(r.ingredients||[]).filter(function(l){return !isIngGroup(l)});
+  var ingNames=ingLines.map(function(l){return l.split(/[ 　]/)[0]}).join(" ");
+  var memoTxt=r.memo||"";
+
+  // 1. Explicit tag matches
+  if(/ご飯|ごはん|飯|米|丼|どんぶり|麺|めん|パスタ|スパゲ|うどん|そば|蕎麦|ラーメン|焼きそば|焼そば|パン|主食|チャーハン|炒飯|炊き込み|おにぎり|おむすび|寿司|雑炊|リゾット|ドリア|餅/.test(tags))cats["ご飯・麺"]=1;
+  if(/汁物|スープ|味噌汁|みそ汁|汁|鍋|シチュー|ポタージュ|豚汁|けんちん|お吸い物|吸い物/.test(tags))cats["汁物"]=1;
+  if(/副菜|おつまみ|つまみ|小鉢|サラダ|和え|酢の物|漬物|漬け|前菜|肴|あと一品/.test(tags))cats["副菜・おつまみ"]=1;
+  if(/作り置き|つくおき|常備菜|弁当|お弁当|冷凍保存/.test(tags))cats["作り置き・弁当"]=1;
+  if(/主菜|メイン|おかず|肉料理|魚料理|(?:^|\s)(?:肉|魚)(?:\s|$)/.test(tags))cats["主菜"]=1;
+
+  // 2. Title / Ingredient inference (catches 塩焼きそば, とうめし, 丼, 麺, 鍋, etc.)
+  if(/めし|飯|丼|どんぶり|焼きそば|焼そば|そば|蕎麦|うどん|パスタ|スパゲ|ペペロン|カルボナーラ|ナポリタン|ボロネーゼ|ミートソース|マカロニ|ラーメン|担々麺|冷麺|そうめん|素麺|にゅうめん|ちゃんぽん|皿うどん|まぜそば|油そば|チャーハン|炒飯|ピラフ|パエリア|オムライス|カレーライス|ハヤシライス|タコライス|ガパオ|ビビンバ|クッパ|リゾット|ドリア|雑炊|おじや|粥|かゆ|おにぎり|おむすび|寿司|ちらし|トースト|サンド|ピザ|お好み焼き|たこ焼き|チヂミ/.test(titleGrp)||
+     /(?:^|\s)(?:ご飯|ごはん|白飯|温かいご飯|冷やご飯|米|生米|無洗米|もち米|中華麺|焼きそば|焼そば|蒸し麺|ゆで麺|うどん|冷凍うどん|そば|蕎麦|そうめん|素麺|パスタ|スパゲ|マカロニ|ラーメン|食パン|バゲット|フランスパン|餅|切り餅)/.test(ingNames)){
+    cats["ご飯・麺"]=1;
+  }
+  if(/汁|スープ|ポタージュ|チャウダー|シチュー|ミネストローネ|サンラータン|酸辣湯|サムゲタン|参鶏湯|鍋|ピェンロー|水炊き|おでん|ポトフ|トムヤム|吸い物|茶碗蒸し/.test(titleGrp)){
+    cats["汁物"]=1;
+  }
+  if(/きんぴら|サラダ|和え|おひたし|お浸し|ナムル|マリネ|カルパッチョ|カプレーゼ|コールスロー|浅漬|ピクルス|酢の物|南蛮漬|冷奴|やっこ|だし巻き|出し巻き|出汁巻き|玉子焼き|卵焼き|味玉|煮卵|アヒージョ|たたき|無限|塩昆布|ジャーマンポテト|枝豆|おつまみ|白瓜|なます|甘露煮|佃煮|大学芋|吉野仕立て/.test(titleGrp)){
+    cats["副菜・おつまみ"]=1;
+  }
+  if(/作り置き|つくおき|常備菜|弁当|日持ち|冷蔵保存|冷凍保存|保存目安/.test(titleGrp+" "+memoTxt)){
+    cats["作り置き・弁当"]=1;
+  }
+  if(/照り焼き|てりやき|唐揚げ|から揚げ|からあげ|竜田揚げ|生姜焼き|しょうが焼き|ハンバーグ|ステーキ|とんかつ|トンカツ|カツ|フライ|コロッケ|メンチ|天ぷら|麻婆|回鍋肉|青椒肉絲|酢豚|エビチリ|海老チリ|八宝菜|油淋鶏|ユーリンチー|チキン南蛮|ソテー|ムニエル|グラタン|ロールキャベツ|肉詰め|餃子|ギョーザ|焼売|シュウマイ|春巻き|肉じゃが|角煮|チャーシュー|煮豚|焼き魚|煮魚|ブリ大根|ぶり大根|味噌煮|みそ煮|生姜煮|筑前煮|チャプチェ|プルコギ|よだれ鶏|バンバンジー|棒々鶏|ピェンロー|すき焼き|しゃぶしゃぶ|生姜焼/.test(titleGrp)){
+    cats["主菜"]=1;
+  }
+  // Fallback: if no main/side/rice/soup matched yet, infer from main protein vs vegetable
+  if(!cats["ご飯・麺"]&&!cats["汁物"]&&!cats["副菜・おつまみ"]&&!cats["主菜"]){
+    if(/鶏|とり|豚|ぶた|牛(?!乳)|ぎゅう(?!にゅう)|ひき肉|挽き肉|挽肉|合いびき|鮭|サーモン|サバ|鯖|ブリ|鰤|タラ|鱈|エビ|海老|イカ|タコ|厚揚げ|手羽|ささみ/.test(titleGrp+" "+ingNames)){
+      cats["主菜"]=1;
+    }else{
+      cats["副菜・おつまみ"]=1;
+    }
+  }
+  return BASE_CATS.filter(function(c){return cats[c]});
+}
+
+// ---- Fridge / Ingredient Filter Definitions ----
+var ING_PRESETS=[
+  {label:"鶏肉",re:/とり|鶏|ちきん|ささみ|手羽/},
+  {label:"豚肉",re:/ぶた|豚|ぽーく|べーこん|はむ|ういんなー|そーせーじ/},
+  {label:"牛肉",re:/ぎゅう(?!にゅう)|牛(?!乳|蒡)|びーふ/},
+  {label:"ひき肉",re:/ひきにく|ひき肉|挽き肉|挽肉|みんち|あいびき|合いびき/},
+  {label:"魚・海鮮",re:/さけ|しゃけ|鮭|さーもん|さば|鯖|ぶり|鰤|たら|鱈|あじ|鯵|いわし|さんま|まぐろ|えび|海老|いか|たこ|あさり|しらす|つな|ツナ/},
+  {label:"卵",re:/たまご|卵|玉子|うずら/},
+  {label:"豆腐・厚揚げ",re:/とうふ|豆腐|あつあげ|厚揚げ|あぶらあげ|油揚げ|おあげ|高野豆腐/},
+  {label:"大根",re:/だいこん|大根/},
+  {label:"白菜",re:/はくさい|白菜/},
+  {label:"キャベツ",re:/きゃべつ|キャベツ/},
+  {label:"ごぼう",re:/ごぼう|牛蒡/},
+  {label:"にんじん",re:/にんじん|人参/},
+  {label:"玉ねぎ",re:/たまねぎ|玉ねぎ|玉葱/},
+  {label:"長ねぎ",re:/ながねぎ|長ねぎ|長葱|白ねぎ|青ねぎ|小ねぎ|万能ねぎ|(?:^|\s)ねぎ/},
+  {label:"じゃがいも",re:/じゃがいも|馬鈴薯|男爵|メークイン|新じゃが/},
+  {label:"なす",re:/なす|茄子/},
+  {label:"かぼちゃ",re:/かぼちゃ|南瓜/},
+  {label:"きゅうり",re:/きゅうり|胡瓜/},
+  {label:"きのこ",re:/きのこ|しめじ|えのき|えりんぎ|しいたけ|椎茸|まいたけ|舞茸|なめこ|まっしゅるーむ/},
+  {label:"もやし",re:/もやし/},
+  {label:"春雨・こんにゃく",re:/はるさめ|春雨|こんにゃく|蒟蒻|しらたき|糸こん/}
+];
+
+function recipeMatchesIng(r,label){
+  var hay=snorm((r.title||"")+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" "));
+  var preset=ING_PRESETS.find(function(p){return p.label===label});
+  if(preset)return preset.re.test(hay);
+  return hay.indexOf(snorm(label))>=0;
+}
+
+function availableIngChips(){
+  return ING_PRESETS.filter(function(p){
+    return recipes.some(function(r){return p.re.test(snorm((r.title||"")+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")))});
+  }).map(function(p){return p.label});
 }
 
 // Extract base title ("鶏の照り焼き（定番）" -> "鶏の照り焼き") and variant ("定番")
@@ -1131,6 +1597,7 @@ function buildStacks(filteredRecipes){
     var latestUpd=Math.max.apply(null,all.map(function(x){return x.updated||0}));
     var latestCook=Math.max.apply(null,all.map(function(x){return x.cooked||0}));
     var anyFav=all.some(function(x){return x.fav});
+    var anyPinned=all.some(function(x){return planIds.indexOf(x.id)>=0});
     var title=all.length>1?dishMenuName(all[0]):rep.title;
     stacks.push({
       key:k,
@@ -1139,7 +1606,8 @@ function buildStacks(filteredRecipes){
       title:title,
       updated:latestUpd,
       cooked:latestCook,
-      fav:anyFav
+      fav:anyFav,
+      pinned:anyPinned
     });
   });
   return stacks;
@@ -1171,20 +1639,109 @@ function cleanGroupTitle(line){return String(line).replace(/^\[group\]/,"").repl
 var PH_SVG='<svg class="ph-svg" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>';
 var LAYER_SVG='<svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
 
+// ---- Today's Menu (Plan) Keep Logic ----
+function isPinned(id){return planIds.indexOf(id)>=0}
+function togglePlan(id,silent){
+  var idx=planIds.indexOf(id);
+  var r=recipes.find(function(x){return x.id===id});
+  if(idx>=0){
+    planIds.splice(idx,1);
+    if(!silent)toast("「今日つくる」から外しました");
+  }else{
+    planIds.push(id);
+    if(!silent&&r)toast("📌「"+r.title+"」を今日つくるにキープしました");
+  }
+  savePlan();
+  renderPlanBar();
+  renderList();
+}
+function renderPlanBar(){
+  var valid=planIds.filter(function(id){return recipes.some(function(r){return r.id===id})});
+  if(valid.length!==planIds.length){planIds=valid;savePlan()}
+  var bar=$("planBar");
+  var showInView=(curView==="vList"||curView==="vDetail");
+  bar.hidden=!valid.length||!showInView;
+  if(!valid.length)return;
+  $("planTitle").textContent="📌 今日つくる（"+valid.length+"品）";
+  $("planTabs").innerHTML=valid.map(function(id){
+    var r=recipes.find(function(x){return x.id===id});
+    if(!r)return "";
+    var active=(curView==="vDetail"&&curDetailId===r.id);
+    return '<div class="plan-pill'+(active?" on":"")+'">'
+      +'<button type="button" class="plan-pill-go" data-plan-go="'+r.id+'">'+esc(r.title)+'</button>'
+      +'<button type="button" class="plan-pill-x" data-plan-rm="'+r.id+'" aria-label="外す">✕</button>'
+      +'</div>';
+  }).join("");
+}
+$("planTabs").onclick=function(e){
+  var go=e.target.closest("[data-plan-go]");
+  if(go){
+    var id=go.getAttribute("data-plan-go");
+    renderDetail(id);
+    return;
+  }
+  var rm=e.target.closest("[data-plan-rm]");
+  if(rm){
+    var rid=rm.getAttribute("data-plan-rm");
+    togglePlan(rid,true);
+    if(curView==="vDetail"&&curDetailId===rid)renderDetail(rid);
+  }
+};
+$("planToShop").onclick=function(){
+  var n=0;
+  planIds.forEach(function(id){
+    var r=recipes.find(function(x){return x.id===id});
+    if(!r)return;
+    var st=cookSession[r.id], base=baseServ(r.servings);
+    var f=(st&&st.cur&&base)?st.cur/base:1;
+    n+=addToShop(r.ingredients||[],r.title,f);
+  });
+  toast(n?"今日つくる"+planIds.length+"品の材料を買い物リストへ追加しました":"追加する材料がありません");
+};
+$("planClear").onclick=function(){
+  planIds=[];savePlan();renderPlanBar();renderList();
+  if(curView==="vDetail"&&curDetailId)renderDetail(curDetailId);
+  toast("「今日つくる」をクリアしました");
+};
+
 function renderList(){
   var qv=$("q").value;
   $("qClear").hidden=!qv;
   var qs=snorm(qv).split(/\s+/).filter(Boolean);
-  var tb=$("tagBar"),tags=allTags();
-  if(activeTag&&tags.indexOf(activeTag)<0)activeTag="";
-  var favBtn='<button class="tag'+(favOnly?" on":"")+'" data-fav="1">★ お気に入り</button>';
-  tb.innerHTML=favBtn+tags.map(function(t){return '<button class="tag'+(t===activeTag?" on":"")+'" data-t="'+esc(t)+'">#'+esc(t)+'</button>'}).join("");
+
+  // Build Tag Bar: ★ お気に入り + 🥬 食材フィルタ + 5 Core Smart Genres
+  var tb=$("tagBar");
+  if(activeTag&&BASE_CATS.indexOf(activeTag)<0)activeTag="";
+  var favBtn='<button type="button" class="tag'+(favOnly?" on":"")+'" data-fav="1">★ お気に入り</button>';
+  var ingCnt=selectedIngs.length;
+  var ingBtn='<button type="button" class="tag ing-toggle'+(ingPanelOpen||ingCnt?" on":"")+'" data-ing-toggle="1">🥬 食材'+(ingCnt?" ("+ingCnt+")":"")+'</button>';
+  var catBtns=BASE_CATS.map(function(c){
+    return '<button type="button" class="tag'+(c===activeTag?" on":"")+'" data-t="'+esc(c)+'">'+esc(c)+'</button>';
+  }).join("");
+  tb.innerHTML=favBtn+ingBtn+catBtns;
+
+  // Render Fridge / Ingredient Chips Panel
+  var availIngs=availableIngChips();
+  selectedIngs=selectedIngs.filter(function(x){return availIngs.indexOf(x)>=0});
+  var ip=$("ingPanel");
+  ip.hidden=!(ingPanelOpen||selectedIngs.length>0);
+  $("ingClearBtn").hidden=!selectedIngs.length;
+  $("ingChips").innerHTML=availIngs.length?availIngs.map(function(lbl){
+    var on=selectedIngs.indexOf(lbl)>=0;
+    return '<button type="button" class="ing-chip'+(on?" on":"")+'" data-ing="'+esc(lbl)+'">'+esc(lbl)+'</button>';
+  }).join(""):'<span class="meta">食材データがありません</span>';
+
   var mode=$("sortSel").value;
   var list=recipes.filter(function(r){
     if(favOnly&&!r.fav)return false;
-    if(activeTag&&(r.tags||[]).indexOf(activeTag)<0)return false;
+    if(activeTag&&getRecipeCats(r).indexOf(activeTag)<0)return false;
+    if(selectedIngs.length){
+      var allMatch=selectedIngs.every(function(ing){return recipeMatchesIng(r,ing)});
+      if(!allMatch)return false;
+    }
     if(!qs.length)return true;
-    var hay=snorm(r.title+" "+(r.group||"")+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||""));
+    var cats=getRecipeCats(r).join(" ");
+    var hay=snorm(r.title+" "+(r.group||"")+" "+cats+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||""));
     return qs.every(function(w){return hay.indexOf(w)>=0});
   });
   var stacks=buildStacks(list);
@@ -1197,7 +1754,9 @@ function renderList(){
     var r=st.rep,multi=st.items.length>1;
     var star=st.fav?'<span class="star" aria-label="お気に入り">★</span>':"";
     var badge=multi?'<span class="stack-badge">'+LAYER_SVG+st.items.length+'種</span>':"";
-    var ph=r.photo?'<div class="ph"><img src="'+esc(r.photo)+'" alt="" loading="lazy">'+badge+star+'</div>':'<div class="ph">'+PH_SVG+badge+star+'</div>';
+    var pinned=isPinned(r.id);
+    var pinBtn='<span class="pin-btn'+(pinned?" on":"")+'" data-pin="'+r.id+'" role="button" tabindex="0">'+(pinned?"📌 キープ中":"＋ 今日")+'</span>';
+    var ph=r.photo?'<div class="ph"><img src="'+esc(r.photo)+'" alt="" loading="lazy">'+badge+star+pinBtn+'</div>':'<div class="ph">'+PH_SVG+badge+star+pinBtn+'</div>';
     var varNames=multi?'<div class="var-line">'+esc(st.items.map(function(x){return variantLabel(x,st.title)}).join(" / "))+'</div>':"";
     var info=[r.time,r.servings].filter(Boolean).join("・");
     var ck=st.cooked?'<span>最終 '+dstr(st.cooked)+'</span>':"";
@@ -1226,7 +1785,6 @@ function openGroupModal(r){
   var siblings=getStackItems(r);
   $("grpInput").value=curMenu;
   $("grpSeparateBtn").hidden=siblings.length<=1&&!r.group;
-  // Build distinct dish menus from other recipes
   var seen={},otherMenus=[];
   recipes.forEach(function(x){
     if(x.id===r.id)return;
@@ -1257,7 +1815,6 @@ function openGroupModal(r){
     var b=e.target.closest("[data-gname]");if(!b)return;
     var gname=b.getAttribute("data-gname");
     r.group=gname;delete r.solo;
-    // Also ensure target recipes without explicit group share the same menu name
     recipes.forEach(function(x){
       if(normDishKey(dishMenuName(x))===normDishKey(gname)&&!x.solo)x.group=gname;
     });
@@ -1277,9 +1834,14 @@ $("grpModal").onclick=function(e){if(e.target===this)this.hidden=true};
 
 function renderDetail(id){
   var r=recipes.find(function(x){return x.id===id});if(!r){show("vList");return}
+  curDetailId=r.id;
   var siblings=getStackItems(r);
   var menuTitle=dishMenuName(r);
-  var base=baseServ(r.servings),cur=base,unit=servUnit(r.servings),chk={},stepCur=-1;
+  var base=baseServ(r.servings),unit=servUnit(r.servings);
+  if(!cookSession[r.id])cookSession[r.id]={chk:{},stepCur:-1,cur:base};
+  var sess=cookSession[r.id];
+  if(!sess.cur&&base)sess.cur=base;
+  var cur=sess.cur||base, chk=sess.chk, stepCur=sess.stepCur;
 
   var h='<div class="bar"><button id="dBack">← 一覧</button><span class="sp"></span><button id="dGroup" title="同じ料理の別レシピと重ねる">🗂 '+(siblings.length>1?"まとめ設定":"他とまとめる")+'</button><button id="dFav"></button><button id="dEdit">編集</button></div>';
 
@@ -1287,7 +1849,7 @@ function renderDetail(id){
   h+='<div class="vbar-wrap"><div class="vbar-head"><span>メニュー: '+esc(menuTitle)+(siblings.length>1?'（'+siblings.length+'種のレシピ）':'')+'</span>'
     +(siblings.length>1&&!r.primary?'<button type="button" class="tag" id="dSetPrimary" style="padding:2px 9px;min-height:24px;font-size:11.5px">表紙にする</button>':'')
     +'</div><div class="vtabs" id="vTabs">';
-  siblings.forEach(function(s,idx){
+  siblings.forEach(function(s){
     var lbl=siblings.length>1?variantLabel(s,menuTitle):s.title;
     if(siblings.length>1&&lbl==="基本"&&s.title!==menuTitle)lbl=s.title;
     h+='<button type="button" class="vtab'+(s.id===r.id?" on":"")+'" data-vid="'+s.id+'">'+(s.primary&&siblings.length>1?"★ ":"")+esc(lbl)+'</button>';
@@ -1299,9 +1861,24 @@ function renderDetail(id){
   var chips=[];
   if(r.servings)chips.push('<span class="chip">'+esc(r.servings)+'</span>');
   if(r.time)chips.push('<span class="chip">'+esc(r.time)+'</span>');
-  (r.tags||[]).forEach(function(t){chips.push('<span class="chip">#'+esc(t)+'</span>')});
-  if(chips.length)h+='<div class="chips">'+chips.join("")+'</div>';
-  h+='<div class="acts"><button class="soft" id="dCook">✔ 作った！</button><button id="dShop">＋ 買い物リストへ</button></div><div class="meta" id="dCI"></div>';
+  var autoCats=getRecipeCats(r);
+  autoCats.forEach(function(c){chips.push('<span class="chip cat-chip">'+esc(c)+'</span>')});
+  (r.tags||[]).forEach(function(t){
+    if(autoCats.indexOf(t)<0)chips.push('<span class="chip">#'+esc(t)+'</span>');
+  });
+  chips.push('<button type="button" class="chip edit-cat-btn" id="dToggleCatEdit">＋ ジャンル調整</button>');
+  h+='<div class="chips">'+chips.join("")+'</div>';
+  h+='<div class="cat-picker" id="dCatPicker" hidden>'+BASE_CATS.map(function(c){
+    var on=autoCats.indexOf(c)>=0;
+    return '<button type="button" class="'+(on?"on":"")+'" data-setcat="'+esc(c)+'">'+esc(c)+'</button>';
+  }).join("")+'</div>';
+
+  var pinned=isPinned(r.id);
+  h+='<div class="acts">'
+    +'<button class="soft" id="dCook">✔ 作った！</button>'
+    +'<button class="'+(pinned?"primary":"amber-soft")+'" id="dPlan">'+(pinned?"📌 キープ中":"📌 今日つくる")+'</button>'
+    +'<button id="dShop">＋ 買い物リストへ</button>'
+    +'</div><div class="meta" id="dCI"></div>';
   if((r.ingredients||[]).length){
     h+='<h3><span>材料</span>';
     if(base)h+='<span class="scaler"><button id="sMinus" aria-label="減らす">−</button><b id="sVal"></b><button id="sPlus" aria-label="増やす">＋</button></span>';
@@ -1311,7 +1888,7 @@ function renderDetail(id){
   }
   if((r.steps||[]).length){
     h+='<h3><span>作り方</span></h3><ol class="steps" id="stepList">'+r.steps.map(function(i,idx){
-      return '<li data-step="'+idx+'"><div class="step-body">'+linkifyTimes(esc(i))+'</div></li>';
+      return '<li data-step="'+idx+'" class="'+(idx===stepCur?"cur":"")+'"><div class="step-body">'+linkifyTimes(esc(i))+'</div></li>';
     }).join("")+'</ol>';
   }
   if(r.memo)h+='<h3><span>メモ</span></h3><div class="memo">'+esc(r.memo)+'</div>';
@@ -1320,6 +1897,7 @@ function renderDetail(id){
 
   function factor(){return base?cur/base:1}
   function upd(){
+    sess.cur=cur;
     var f=factor();
     if($("ingList")){
       $("ingList").innerHTML=(r.ingredients||[]).map(function(i,n){
@@ -1340,6 +1918,22 @@ function renderDetail(id){
     }else el.textContent="";
   }
   upd();favLabel();ci();
+
+  $("dToggleCatEdit").onclick=function(){
+    var cp=$("dCatPicker");
+    cp.hidden=!cp.hidden;
+  };
+  $("dCatPicker").onclick=function(e){
+    var b=e.target.closest("[data-setcat]");if(!b)return;
+    var cat=b.getAttribute("data-setcat");
+    var tags=(r.tags||[]).slice();
+    var idx=tags.indexOf(cat);
+    if(idx>=0)tags.splice(idx,1);
+    else tags.push(cat);
+    r.tags=tags;
+    save();renderList();renderDetail(r.id);
+    toast("ジャンル「"+cat+"」を更新しました");
+  };
 
   $("vTabs").onclick=function(e){
     var b=e.target.closest("button");if(!b)return;
@@ -1373,6 +1967,7 @@ function renderDetail(id){
     var li=e.target.closest("li");if(!li)return;
     var idx=parseInt(li.getAttribute("data-step"),10);
     stepCur=(stepCur===idx)?-1:idx;
+    sess.stepCur=stepCur;
     [].slice.call($("stepList").children).forEach(function(el,i){
       el.classList.toggle("cur",i===stepCur);
     });
@@ -1383,6 +1978,7 @@ function renderDetail(id){
   }
   $("dFav").onclick=function(){r.fav=!r.fav;save();favLabel();renderList()};
   $("dCook").onclick=function(){r.cookCount=(r.cookCount||0)+1;r.cooked=Date.now();save();ci();renderList();toast("作った記録を付けました")};
+  $("dPlan").onclick=function(){togglePlan(r.id);renderDetail(r.id)};
   $("dShop").onclick=function(){var n=addToShop(r.ingredients||[],r.title,factor());toast(n?"買い物リストに"+n+"品目を追加しました":"材料がありません")};
   $("dPrint").onclick=function(){window.print()};
   $("dBack").onclick=function(){show("vList")};
@@ -1390,9 +1986,9 @@ function renderDetail(id){
   $("dTxt").onclick=function(){exportFile(safeName(r.title)+".txt",toText(r),"text/plain")};
   $("dDel").onclick=function(){
     var nextSibling=siblings.find(function(s){return s.id!==r.id});
-    trashRecipe(r);renderList();
+    trashRecipe(r);renderList();renderPlanBar();
     if(nextSibling)renderDetail(nextSibling.id);else show("vList");
-    toast("「"+r.title+"」を削除しました","元に戻す",function(){restoreRecipe(r.id);renderList()});
+    toast("「"+r.title+"」を削除しました","元に戻す",function(){restoreRecipe(r.id);renderList();renderPlanBar()});
   };
   show("vDetail");
 }
@@ -1466,8 +2062,9 @@ function updateFormPreview(){
   if(!raw.trim()){pv.innerHTML='<span class="meta">本文を入力すると解析結果が表示されます</span>';return}
   var p=parseText(parts[0]||"");
   var menu=p.group||autoBaseTitle(p.title);
+  var cats=getRecipeCats(p);
   pv.innerHTML='<div><b>料理名:</b> '+esc(p.title||"（未入力）")+' / <b>まとめメニュー:</b> '+esc(menu||"−")+'</div>'
-    +'<div style="margin-top:4px"><b>分量:</b> '+esc(p.servings||"−")+' / <b>時間:</b> '+esc(p.time||"−")+' / <b>タグ:</b> '+(p.tags.length?p.tags.map(function(t){return "#"+esc(t)}).join(" "):"−")+' / <b>材料:</b> '+p.ingredients.length+'行 / <b>手順:</b> '+p.steps.length+'ステップ</div>';
+    +'<div style="margin-top:4px"><b>分量:</b> '+esc(p.servings||"−")+' / <b>時間:</b> '+esc(p.time||"−")+' / <b>自動ジャンル:</b> '+(cats.length?cats.map(function(t){return esc(t)}).join("・"):"−")+' / <b>材料:</b> '+p.ingredients.length+'行 / <b>手順:</b> '+p.steps.length+'ステップ</div>';
 }
 function openForm(id,presetGroup){
   editing=id||null;
@@ -1640,17 +2237,46 @@ $("btnSave").onclick=function(){
 };
 $("q").oninput=renderList;
 $("qClear").onclick=function(){$("q").value="";renderList();$("q").focus()};
-$("sortSel").onchange=renderList;
+$("sortSel").onchange=function(){
+  saveSort($("sortSel").value);
+  renderList();
+};
 $("tagBar").onclick=function(e){
   var b=e.target.closest("button");if(!b)return;
   if(b.getAttribute("data-fav")){favOnly=!favOnly;renderList();return}
+  if(b.getAttribute("data-ing-toggle")){
+    ingPanelOpen=!ingPanelOpen;
+    renderList();
+    return;
+  }
   var t=b.getAttribute("data-t");
   if(t!=null){activeTag=(activeTag===t)?"":t;renderList()}
 };
-$("grid").onclick=function(e){var c=e.target.closest(".card");if(c)renderDetail(c.getAttribute("data-id"))};
+$("ingChips").onclick=function(e){
+  var b=e.target.closest("[data-ing]");if(!b)return;
+  var lbl=b.getAttribute("data-ing");
+  var idx=selectedIngs.indexOf(lbl);
+  if(idx>=0)selectedIngs.splice(idx,1);
+  else selectedIngs.push(lbl);
+  renderList();
+};
+$("ingClearBtn").onclick=function(){
+  selectedIngs=[];
+  renderList();
+};
+$("grid").onclick=function(e){
+  var pin=e.target.closest("[data-pin]");
+  if(pin){
+    e.stopPropagation();
+    togglePlan(pin.getAttribute("data-pin"));
+    return;
+  }
+  var c=e.target.closest(".card");
+  if(c)renderDetail(c.getAttribute("data-id"));
+};
 $("btnExport").onclick=function(){
   if(!recipes.length&&!shop.length){toast("データがありません");return}
-  var json=JSON.stringify({app:"recipe-book",version:2,exported:new Date().toISOString(),recipes:recipes,shop:shop,trash:trash},null,2);
+  var json=JSON.stringify({app:"recipe-book",version:2,exported:new Date().toISOString(),recipes:recipes,shop:shop,trash:trash,plan:planIds,sort:$("sortSel").value},null,2);
   exportFile("recipes-"+today()+".json",json,"application/json",recipes.length+"件を書き出しました");
 };
 $("btnImport").onclick=function(){$("fileImport").click()};
@@ -1671,7 +2297,9 @@ $("fileImport").onchange=function(){
       });
       if(j&&Array.isArray(j.shop)){shop=j.shop;saveShop();updateBadge()}
       if(j&&Array.isArray(j.trash)){trash=cleanTrash(j.trash);saveTrash()}
-      save();renderList();show("vList");toast(n+"件を読み込みました");
+      if(j&&Array.isArray(j.plan)){planIds=j.plan;savePlan()}
+      if(j&&j.sort&&["new","cooked","stale"].indexOf(j.sort)>=0){$("sortSel").value=j.sort;saveSort(j.sort)}
+      save();renderList();renderPlanBar();show("vList");toast(n+"件を読み込みました");
     }catch(e){toast("読み込めないファイルです")}
   };
   fr.readAsText(f);
@@ -1690,7 +2318,7 @@ var SAMPLES=[
 ["🍗","#f3e5c8","#d59b62",`鶏の照り焼き（定番）
 分量: 2人分
 調理時間: 20分
-タグ: 和食, 肉
+タグ: 主菜
 
 【材料】
 鶏もも肉 1枚（300g）
@@ -1712,7 +2340,7 @@ var SAMPLES=[
 ["🍗","#edd6b4","#c4824a",`鶏の照り焼き（こってりマヨ）
 分量: 2人分
 調理時間: 15分
-タグ: 和食, 肉, 弁当
+タグ: 主菜, 作り置き・弁当
 
 【材料】
 鶏もも肉 1枚（300g）
@@ -1732,7 +2360,7 @@ var SAMPLES=[
 ["🍲","#d9e8dc","#88ad90",`豚汁
 分量: 4人分
 調理時間: 25分
-タグ: 和食, 汁物, 作り置き
+タグ: 汁物, 作り置き・弁当
 
 【材料】
 豚バラ薄切り肉 150g
@@ -1753,7 +2381,7 @@ var SAMPLES=[
 ["🍳","#f9efc7","#e5be62",`だし巻き卵
 分量: 2人分
 調理時間: 10分
-タグ: 和食, 卵, 朝食
+タグ: 副菜・おつまみ
 
 【材料】
 卵 3個
@@ -1811,7 +2439,7 @@ $("sheet").onclick=function(e){if(e.target===this||e.target.closest("button"))th
 $("btnTrashSheet").onclick=function(){renderTrash();show("vTrash")};
 $("empty").onclick=function(e){if(e.target.id==="emptyNew")openForm()};
 $("btnHelp").onclick=function(){show("vHelp")};
-$("hBack").onclick=function(){show("vList")};
+$("hBack").onclick=function(){goBack()};
 $("vHelp").onclick=function(e){
   var ex=e.target.getAttribute&&e.target.getAttribute("data-ex");
   if(!ex)return;
@@ -1825,7 +2453,7 @@ $("vHelp").onclick=function(e){
   }
   updateFormPreview();
 };
-$("tBack").onclick=function(){show("vList")};
+$("tBack").onclick=function(){goBack()};
 $("tList").onclick=function(e){
   var r=e.target.getAttribute("data-r"),d=e.target.getAttribute("data-d");
   if(r){restoreRecipe(r);renderTrash();renderList();toast("元に戻しました")}
