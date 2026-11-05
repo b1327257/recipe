@@ -991,7 +991,7 @@ pre.ex{
   - 料理・デザートの場合：【ご飯・麺 / 主菜 / 副菜・おつまみ / サラダ・漬物 / 汁物・鍋 / 作り置き・弁当 / スイーツ】
   - 知恵袋（調味料・たれ・基本技）の場合：【たれ・ソース / つゆ・ポン酢・出汁 / ドレッシング・酢 / 合わせ味噌 / 塩・薬味 / 炊飯・配合・技】
 ・【材料】の下は1行1品目とし、「食材名 分量」のように食材名と分量の間を半角スペースで区切る（例: 鶏もも肉 300g、醤油 大さじ2）
-・合わせ調味料や比率などがある場合は【たれ】【黄金比】【A】のように小見出し行を入れる
+・合わせ調味料や比率などがある場合は【たれ】【黄金比】【A】などの小見出し行を入れる
 ・【作り方】の下は「1. 」「2. 」のように番号付きで1行1手順ずつ書く
 ・【メモ】の下に火加減のコツやアレンジ、保存目安などを書く
 ・参考にした動画やWebサイトのURLがある場合は、最後に【情報源】の見出しを入れてURLのみを1行ずつ書く（ない場合は省略）
@@ -1256,7 +1256,7 @@ function initData(){
       customIngs=Array.isArray(res&&res.customIngs)?res.customIngs:(Array.isArray(leg.customIngs)?leg.customIngs:[]);
       hiddenIngs=Array.isArray(res&&res.hiddenIngs)?res.hiddenIngs:(Array.isArray(leg.hiddenIngs)?leg.hiddenIngs:[]);
       if(!seeded&&!recipes.length){
-        seed();
+        // Samples removed: starts completely empty
         idbPut("seeded","1");
       }else{
         if(migrateRecipes(recipes))save();
@@ -1900,7 +1900,7 @@ function migrateRecipes(arr){
 // ---- Fridge / Ingredient Filter Definitions ----
 var ING_PRESETS=[
   {label:"鶏肉",grp:"肉・魚・卵・大豆",re:/とり|鶏|ちきん|ささみ|手羽/},
-  {label:"豚肉",grp:"肉・魚・卵・大豆",re:/ぶた|豚|ぽーく|べーこん|はむ|ういんなー|そーせーじ/},
+  {label:"豚肉",grp:"肉・魚・卵・大豆",re:/ぶた|豚|ぽーく|べーこん|hამ|ういんなー|そーせーじ/},
   {label:"牛肉",grp:"肉・魚・卵・大豆",re:/ぎゅう(?!にゅう)|牛(?!乳|蒡)|びーふ/},
   {label:"ひき肉",grp:"肉・魚・卵・大豆",re:/ひきにく|ひき肉|挽き肉|挽肉|みんち|あいびき|合いびき/},
   {label:"魚・海鮮",grp:"肉・魚・卵・大豆",re:/さけ|しゃけ|鮭|さーもん|さば|鯖|ぶり|鰤|たら|鱈|あじ|鯵|いわし|さんま|まぐろ|えび|海老|いか|たこ|ほたて|ホタテ|あさり|しらす/},
@@ -1958,7 +1958,7 @@ function availableIngChips(){
 // Extract base title ("鶏の照り焼き（定番）" -> "鶏の照り焼き") and variant ("定番")
 function splitTitleParts(title){
   var s=String(title||"").trim();
-  var m=s.match(/^(.+?)\s*[（(【\[「『]([^）)】\]」』]+)[）)】\]」』]\s*$/);
+  var m=s.match(/^(.+?)\s*[（(【\[「『]([^）)[\]」』]+)[）)\]」』]\s*$/);
   if(m&&m[1].trim())return{base:m[1].trim(),variant:m[2].trim()};
   var m2=s.match(/^(.+?)\s+[-ー―〜~]\s*(.+)$/);
   if(m2&&m2[1].trim())return{base:m2[1].trim(),variant:m2[2].trim()};
@@ -2301,7 +2301,7 @@ function linkifyTimes(escapedStep){
   });
 }
 function linkifyUrls(escapedText){
-  return String(escapedText||"").replace(/(https?:\/\/[^\s<>"'）)】\]]+)/g,function(url){
+  return String(escapedText||"").replace(/(https?:\/\/[^\s<>"'）)\}]+)/g,function(url){
     return '<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+url+'</a>';
   });
 }
@@ -2311,7 +2311,7 @@ function renderSourceSection(srcText){
   var lines=String(srcText||"").split(/\r?\n/).map(function(s){return s.trim()}).filter(Boolean);
   if(!lines.length)return "";
   var items=lines.map(function(l){
-    var m=l.match(/(https?:\/\/[^\s<>"'）)】\]]+)/);
+    var m=l.match(/(https?:\/\/[^\s<>"'）)\}]+)/);
     if(m){
       var url=m[1];
       var isYt=/youtube\.com|youtu\.be/i.test(url);
@@ -3016,184 +3016,6 @@ $("fileImport").onchange=function(){
   };
   fr.readAsText(f);
 };
-
-function mkPhoto(emoji,c1,c2){
-  try{
-    var c=document.createElement("canvas");c.width=600;c.height=450;var x=c.getContext("2d");
-    var g=x.createLinearGradient(0,0,600,450);g.addColorStop(0,c1);g.addColorStop(1,c2);
-    x.fillStyle=g;x.fillRect(0,0,600,450);
-    x.font="170px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(emoji,300,235);
-    return c.toDataURL("image/jpeg",.8);
-  }catch(e){return ""}
-}
-var SAMPLES=[
-["🍗","#f3e5c8","#d59b62",`鶏の照り焼き（定番）
-分量: 2人分
-調理時間: 20分
-タグ: 主菜
-
-【材料】
-鶏もも肉 1枚（300g）
-片栗粉 小さじ1
-サラダ油 小さじ1
-【たれ】
-醤油 大さじ2
-みりん 大さじ2
-砂糖 小さじ1
-
-【作り方】
-1. 鶏肉は余分な脂を取り、厚みを均一にして片栗粉をまぶす
-2. 油を熱したフライパンに皮目を下にして入れ、中火で5分焼く
-3. 裏返してふたをし、弱火で5分蒸し焼きにする
-4. 醤油・みりん・砂糖を加え、とろみがつくまでからめる
-
-【メモ】
-たれは焦げやすいので最後は弱火で。`],
-["🍗","#edd6b4","#c4824a",`鶏の照り焼き（こってりマヨ）
-分量: 2人分
-調理時間: 15分
-タグ: 主菜, 作り置き・弁当
-
-【材料】
-鶏もも肉 1枚（300g）
-マヨネーズ 大さじ1
-【たれ】
-醤油 大さじ1と1/2
-みりん 大さじ1と1/2
-砂糖 小さじ2
-
-【作り方】
-1. 鶏肉を一口大に切り、フライパンにマヨネーズを入れて中火で4分焼く
-2. 裏返して3分焼き、余分な油を拭き取る
-3. たれを加えて強めの中火で一気にからめる
-
-【メモ】
-マヨネーズで焼くことでお肉がやわらかく仕上がります。`],
-["🍲","#d9e8dc","#88ad90",`豚汁
-分量: 4人分
-調理時間: 25分
-タグ: 汁物, 作り置き・弁当
-
-【材料】
-豚バラ薄切り肉 150g
-大根 5cm
-にんじん 1/2本
-ごぼう 1/2本
-こんにゃく 1/2枚
-長ねぎ 1/2本
-だし汁 800ml
-味噌 大さじ3
-ごま油 小さじ2
-
-【作り方】
-1. 野菜は食べやすい大きさに切る。ごぼうは水にさらす
-2. 鍋にごま油を熱し、豚肉と根菜を炒める
-3. だし汁とこんにゃくを加え、アクを取りながら15分煮る
-4. 火を止めて味噌を溶き、ねぎを加えてひと煮立ちさせる`],
-["🍳","#f9efc7","#e5be62",`だし巻き卵
-分量: 2人分
-調理時間: 10分
-タグ: 副菜・おつまみ
-
-【材料】
-卵 3個
-サラダ油 適量
-【卵液】
-だし汁 50ml
-薄口醤油 小さじ1
-砂糖 小さじ2
-
-【作り方】
-1. 卵をほぐし、だし汁・薄口醤油・砂糖を混ぜる
-2. 卵焼き器に油をなじませ、卵液の1/3を流して半熟で巻く
-3. 奥に寄せて油を塗り、残りを2回に分けて同様に巻く
-4. 形を整えて少し置き、食べやすく切る`],
-["🥗","#e3f2e6","#7ab388",`トマトと塩昆布の簡単サラダ
-分量: 2人分
-調理時間: 5分
-タグ: サラダ・漬物
-
-【材料】
-トマト 2個
-塩昆布 10g
-ごま油 大さじ1
-
-【作り方】
-1. トマトを食べやすい大きさに切る
-2. ボウルにトマト・塩昆布・ごま油を入れてさっと和える`],
-["🫙","#f6ebd8","#d49a52",`ポン酢（生柑橘ブレンド）
-分量: 作りやすい分量
-調理時間: 10分
-タグ: つゆ・ポン酢・出汁
-
-【材料】
-【黄金比（小さじ基準）】
-柑橘の生果汁 小さじ14
-醤油 小さじ9
-酢 小さじ2
-
-【作り方】
-1. 複数の柑橘を絞って種をこす
-2. 醤油・酢と混ぜ合わせる`],
-["🥣","#f4e6d8","#c98349",`自家製焼肉のたれ
-分量: 作りやすい分量
-調理時間: 15分
-タグ: たれ・ソース
-
-【材料】
-玉ねぎ（すりおろし） 1/2個分
-酒 100cc
-みりん 150cc
-しょうゆ 100cc
-リンゴジュース（100%） 150cc
-にんにく（すりおろし） 1片分
-
-【作り方】
-1. 鍋にすべての材料を入れて弱火で10分ほど煮詰める`],
-["🍃","#e6f0e4","#6b9c6e",`紫蘇味噌
-分量: 作りやすい分量
-調理時間: 10分
-タグ: 合わせ味噌
-
-【材料】
-青じそ（大葉） 8枚
-砂糖 30g
-ごま油 15ml
-味噌 60g
-
-【作り方】
-1. 大葉をみじん切りにし、調味料と混ぜて一晩寝かせる`],
-["🍋","#faf2d4","#dcc055",`秘伝・柚子塩
-分量: 作りやすい分量
-調理時間: 60分
-タグ: 塩・薬味
-
-【材料】
-柚子 1個
-粗塩 少々
-
-【作り方】
-1. 柚子の表皮をすりおろし、粗塩を混ぜて低温オーブンで乾燥させる`],
-["🍚","#eef0ed","#8d9991",`鍋でのご飯の炊き方（浸水なし・約20分）
-分量: 1合分
-調理時間: 20分
-タグ: 炊飯・配合・技
-
-【材料】
-米 1合
-水 270cc（1合180cc＋半合90cc）
-
-【作り方】
-1. 鍋に洗った米と水を入れて蓋をし、中火にかけて沸騰したら弱火で10分炊く
-2. 火を止めて10分蒸らす`]
-];
-function seed(){
-  var t=Date.now();
-  SAMPLES.forEach(function(sm,i){
-    var r=parseText(sm[3]);r.id=uid();r.photo=mkPhoto(sm[0],sm[1],sm[2]);r.updated=t-i;recipes.push(r);
-  });
-  save();
-}
 
 $("btnShop").onclick=function(){renderShop();show("vShop")};
 $("sAddBtn").onclick=function(){var v=$("sAdd").value.trim();if(!v)return;addToShop([v],"",1);$("sAdd").value="";renderShop()};
