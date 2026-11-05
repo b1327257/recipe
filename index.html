@@ -641,24 +641,61 @@ ol.steps li::before{
 
 /* Quick Wisdom Drawer */
 .w-sheet{
-  background:var(--card);width:100%;max-width:560px;max-height:82vh;
+  background:var(--card);width:100%;max-width:560px;
+  height:82vh;height:82dvh;max-height:82dvh;
   border-radius:22px 22px 0 0;
-  padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));
+  padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));
   display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh-lg);
+  overflow:hidden;
 }
 @media (min-width:600px){
-  .w-sheet{border-radius:20px;margin:16px;padding:18px}
+  .w-sheet{height:76vh;max-height:680px;border-radius:20px;margin:16px;padding:18px}
 }
-.w-sheet-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.w-sheet-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  flex:none;
+}
+.w-sheet-search{
+  position:relative;display:flex;align-items:center;flex:none;
+}
+.w-sheet-search .ico{
+  position:absolute;left:12px;color:var(--muted);pointer-events:none;
+}
+.w-sheet-search input{
+  padding:8px 34px 8px 36px;min-height:40px;font-size:14px;
+}
+.w-sheet-cats{
+  display:flex;gap:5px;flex-wrap:wrap;flex:none;
+}
+.w-sheet-cats .tag{
+  font-size:12px;padding:4px 10px;min-height:28px;
+}
+.w-sheet-list{
+  flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  display:block;padding-right:2px;
+}
 .w-acc{
   background:var(--bg);border:1px solid var(--line);
-  border-radius:var(--r-md);padding:0 13px;margin:0;
+  border-radius:var(--r-md);padding:0 13px;margin:0 0 8px;
+}
+.w-acc:last-child{margin-bottom:0}
+.w-acc[open]{
+  border-color:var(--acc);background:var(--card);box-shadow:var(--sh);
 }
 .w-acc summary{
   padding:11px 0;font-size:14.5px;font-weight:700;
   display:flex;align-items:center;justify-content:space-between;gap:8px;
+  list-style:none;min-height:44px;
 }
-.w-acc-body{padding:4px 0 12px;font-size:13.5px;border-top:1px solid var(--line)}
+.w-acc summary::-webkit-details-marker{display:none}
+.w-acc-title{
+  flex:1;min-width:0;display:flex;align-items:center;gap:6px;
+}
+.w-acc-chev{
+  font-size:11px;color:var(--muted);transition:transform .15s;flex:none;
+}
+.w-acc[open] .w-acc-chev{transform:rotate(90deg);color:var(--acc)}
+.w-acc-body{padding:6px 0 12px;font-size:13.5px;border-top:1px solid var(--line)}
 .scaler{
   display:inline-flex;align-items:center;gap:6px;
   background:var(--card);border:1px solid var(--line);
@@ -894,7 +931,6 @@ pre.ex{
           <option value="new">新しい順</option>
           <option value="cooked">最近作った順</option>
           <option value="freq">よく作る順</option>
-          <option value="fast">調理が早い順</option>
           <option value="stale">ご無沙汰順</option>
         </select>
         <button type="button" class="view-btn" id="btnViewMode" title="カード／コンパクト一覧の切替" aria-label="表示切替">
@@ -1113,12 +1149,16 @@ pre.ex{
 
 <!-- Quick Wisdom Reference Drawer (Accessible while cooking) -->
 <div id="wisdomSheet" class="ov" hidden><div class="w-sheet">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <div class="w-sheet-head">
     <h3 style="margin:0;border:none;padding:0">💡 知恵袋（クイック参照）</h3>
-    <button type="button" id="wSheetClose" style="min-height:32px;padding:4px 11px;font-size:12.5px">閉じる</button>
+    <button type="button" id="wSheetClose" style="min-height:32px;padding:4px 12px;font-size:12.5px">閉じる</button>
   </div>
-  <input type="search" id="wSheetQ" placeholder="たれ・ポン酢・味噌・薬味・炊飯を検索..." style="min-height:38px;padding:7px 12px;font-size:13.5px">
-  <div class="tags" id="wSheetCats" style="padding:0 0 2px"></div>
+  <div class="w-sheet-search">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="search" id="wSheetQ" placeholder="たれ・ポン酢・味噌・薬味・炊飯を検索...">
+    <button type="button" class="q-clear" id="wSheetQClear" aria-label="クリア" hidden>✕</button>
+  </div>
+  <div class="w-sheet-cats" id="wSheetCats"></div>
   <div class="w-sheet-list" id="wSheetList"></div>
 </div></div>
 
@@ -1267,7 +1307,7 @@ function initData(){
       shop=Array.isArray(res&&res.shop)?res.shop:(Array.isArray(leg.shop)?leg.shop:[]);
       trash=cleanTrash(Array.isArray(res&&res.trash)?res.trash:leg.trash);
       var savedSort=(res&&res.sort)||leg.sort||"cat";
-      if(["cat","new","cooked","freq","fast","stale"].indexOf(savedSort)>=0)$("sortSel").value=savedSort;
+      if(["cat","new","cooked","freq","stale"].indexOf(savedSort)>=0)$("sortSel").value=savedSort;
       else $("sortSel").value="cat";
       var savedVm=(res&&res.viewMode)||"grid";
       if(savedVm==="list"||savedVm==="grid")viewMode=savedVm;
@@ -1575,7 +1615,7 @@ window.addEventListener("popstate",function(e){
   document.addEventListener("touchstart",function(e){
     if(!e.touches||e.touches.length!==1){tracking=false;return}
     var el=e.target;
-    ignoreSwipe=!!(el&&el.closest&&el.closest("input,textarea,select,.tags,.vtabs,.plan-tabs,.tbar"));
+    ignoreSwipe=!!(el&&el.closest&&el.closest("input,textarea,select,.tags,.vtabs,.plan-tabs,.tbar,.w-sheet"));
     sx=e.touches[0].clientX;
     sy=e.touches[0].clientY;
     stime=Date.now();
@@ -2204,6 +2244,9 @@ function renderList(){
     if(mode==="cat"){
       var cDiff=stackCatIdx(a)-stackCatIdx(b);
       if(cDiff!==0)return cDiff;
+      var ta=Math.min.apply(null,a.items.map(function(x){return parseMinutes(x.time)}));
+      var tbMin=Math.min.apply(null,b.items.map(function(x){return parseMinutes(x.time)}));
+      if(ta!==tbMin)return ta-tbMin;
       return (b.updated||0)-(a.updated||0);
     }
     if(mode==="cooked")return (b.cooked||0)-(a.cooked||0)||(b.updated||0)-(a.updated||0);
@@ -2211,11 +2254,6 @@ function renderList(){
       var ca=Math.max.apply(null,a.items.map(function(x){return x.cookCount||0}));
       var cb=Math.max.apply(null,b.items.map(function(x){return x.cookCount||0}));
       return cb-ca||(b.cooked||0)-(a.cooked||0)||(b.updated||0)-(a.updated||0);
-    }
-    if(mode==="fast"){
-      var ta=Math.min.apply(null,a.items.map(function(x){return parseMinutes(x.time)}));
-      var tbMin=Math.min.apply(null,b.items.map(function(x){return parseMinutes(x.time)}));
-      return ta-tbMin||(b.updated||0)-(a.updated||0);
     }
     if(mode==="stale")return (a.cooked||0)-(b.cooked||0)||(a.updated||0)-(b.updated||0);
     return (b.updated||0)-(a.updated||0);
@@ -2321,7 +2359,9 @@ function renderSourceSection(srcText){
 }
 
 function renderWisdomQuickSheet(){
-  var qv=snorm($("wSheetQ").value||"").trim();
+  var rawQ=$("wSheetQ").value||"";
+  $("wSheetQClear").hidden=!rawQ;
+  var qs=snorm(rawQ).split(/\s+/).filter(Boolean);
   var allWis=recipes.filter(function(r){return isWisdomItem(r)});
   var catBar=$("wSheetCats");
   if(catBar){
@@ -2334,21 +2374,27 @@ function renderWisdomQuickSheet(){
   }
   var wItems=allWis.filter(function(r){
     if(wSheetCat&&getRecipeCats(r).indexOf(wSheetCat)<0)return false;
-    if(!qv)return true;
-    var hay=snorm(r.title+" "+getRecipeCats(r).join(" ")+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||""));
-    return hay.indexOf(qv)>=0;
+    if(!qs.length)return true;
+    var hay=snorm(r.title+" "+(r.group||"")+" "+getRecipeCats(r).join(" ")+" "+(r.tags||[]).join(" ")+" "+(r.ingredients||[]).join(" ")+" "+(r.memo||""));
+    return qs.every(function(w){return hay.indexOf(w)>=0});
   });
   wItems.sort(function(a,b){
     var ca=WISDOM_CATS.indexOf(getRecipeCats(a)[0]),cb=WISDOM_CATS.indexOf(getRecipeCats(b)[0]);
-    return (ca<0?99:ca)-(cb<0?99:cb)||(b.updated||0)-(a.updated||0);
+    var cDiff=(ca<0?99:ca)-(cb<0?99:cb);
+    if(cDiff!==0)return cDiff;
+    var tDiff=parseMinutes(a.time)-parseMinutes(b.time);
+    if(tDiff!==0)return tDiff;
+    return (b.updated||0)-(a.updated||0);
   });
   var box=$("wSheetList");
   if(!wItems.length){
     box.innerHTML='<div class="empty" style="padding:24px 12px"><p style="margin:0 0 10px">該当する知恵袋がありません</p><button type="button" class="primary" id="wSheetAddBtn">＋ 知恵袋を追加する</button></div>';
     return;
   }
+  var autoOpen=(wItems.length===1)||(qs.length>0&&wItems.length<=2);
   box.innerHTML=wItems.map(function(r,idx){
     var cats=getRecipeCats(r).join("・");
+    var meta=[r.time,r.servings].filter(Boolean).join("・");
     var ings=(r.ingredients||[]).map(function(line){
       if(isIngGroup(line))return '<div style="font-weight:700;color:var(--acc);margin-top:6px">'+esc(cleanGroupTitle(line))+'</div>';
       return '<div>・'+esc(line)+'</div>';
@@ -2357,15 +2403,17 @@ function renderWisdomQuickSheet(){
       return '<div style="margin-top:3px">'+(i+1)+'. '+linkifyTimes(esc(st))+'</div>';
     }).join("");
     var memo=r.memo?'<div style="margin-top:6px;padding:6px 9px;background:var(--bg-sub);border-radius:8px;white-space:pre-wrap;font-size:12.5px">'+linkifyUrls(esc(r.memo))+'</div>':"";
-    return '<details class="w-acc"'+(idx===0&&wItems.length===1?" open":"")+'>'
-      +'<summary><span>'+esc(r.title)+'</span><span class="chip cat-chip" style="font-size:11px;padding:2px 8px">'+esc(cats)+'</span></summary>'
+    return '<details class="w-acc"'+(autoOpen&&idx===0?" open":"")+'>'
+      +'<summary><span class="w-acc-title"><span class="w-acc-chev">▶</span><span>'+esc(r.title)+'</span></span><span class="chip cat-chip" style="font-size:11px;padding:2px 8px;flex:none">'+esc(cats)+'</span></summary>'
       +'<div class="w-acc-body">'
+      +(meta?'<div style="font-size:12px;color:var(--sub);margin-bottom:6px">'+esc(meta)+'</div>':"")
       +(ings?'<div style="margin-bottom:6px">'+ings+'</div>':"")
       +(steps?'<div style="margin-bottom:6px">'+steps+'</div>':"")
       +memo
       +'<div style="margin-top:8px;display:flex;justify-content:flex-end"><button type="button" class="tag" data-wopen="'+r.id+'" style="font-size:12px;min-height:28px">詳細画面で開く →</button></div>'
       +'</div></details>';
   }).join("");
+  box.scrollTop=0;
 }
 
 function openGroupModal(r){
@@ -3040,7 +3088,7 @@ $("fileImport").onchange=function(){
       if(j&&Array.isArray(j.customIngs)){customIngs=j.customIngs}
       if(j&&Array.isArray(j.hiddenIngs)){hiddenIngs=j.hiddenIngs}
       saveIngPrefs();
-      if(j&&j.sort&&["cat","new","cooked","freq","fast","stale"].indexOf(j.sort)>=0){$("sortSel").value=j.sort;saveSort(j.sort)}
+      if(j&&j.sort&&["cat","new","cooked","freq","stale"].indexOf(j.sort)>=0){$("sortSel").value=j.sort;saveSort(j.sort)}
       else{$("sortSel").value="cat";saveSort("cat")}
       migrateRecipes(recipes);
       save();renderList();renderPlanBar();show("vList");toast(n+"件を読み込みました");
@@ -3113,6 +3161,15 @@ $("wisdomSheet").onclick=function(e){
   }
 };
 $("wSheetQ").oninput=renderWisdomQuickSheet;
+$("wSheetQClear").onclick=function(){$("wSheetQ").value="";renderWisdomQuickSheet();$("wSheetQ").focus()};
+$("wSheetList").addEventListener("toggle",function(e){
+  var tgt=e.target;
+  if(tgt&&tgt.tagName==="DETAILS"&&tgt.open){
+    [].slice.call($("wSheetList").querySelectorAll("details.w-acc[open]")).forEach(function(d){
+      if(d!==tgt)d.open=false;
+    });
+  }
+},true);
 $("btnMore").onclick=function(){$("sheet").hidden=false};
 $("sheet").onclick=function(e){if(e.target===this||e.target.closest("button"))this.hidden=true};
 $("btnTrashSheet").onclick=function(){renderTrash();show("vTrash")};
